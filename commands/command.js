@@ -1,4 +1,7 @@
 let Shuffle = require('./shuffle')
+let strat = require('./strat')
+
 module.exports = {
-    shuffle: Shuffle.shuffle
+    shuffle: Shuffle.shuffle,
+    strat: strat.strat
 }
