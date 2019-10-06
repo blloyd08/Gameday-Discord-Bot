@@ -1,5 +1,5 @@
 {
-    "name": "test-bot",
+    "name": "gameday-bot",
     "version": "1.0.0",
     "description": "My Test Bot",
     "main": "bot.js",
