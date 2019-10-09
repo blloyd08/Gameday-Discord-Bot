@@ -28,38 +28,19 @@ bot.on('ready', function (evt){
 
 bot.on('disconnect', function(errMsg, code){
     logger.info(`Bot disconnected (${code})`);
-    if (errMsg)
+    if (errMsg){
+        console.log(errMsg);
         logger.error(errMsg);
+    }
 });
 
 bot.on('message', function(user, userID, channelID, message, evt){
     try {
         if (message.substring(0,1) == '!'){
-            var args = message.substring(1).split(' ');
-            var cmd = args[0];
-            args = args.splice(1);
-            var messageArgs = {
-                userID: userID,
-                channelID: channelID,
-                message: message,
-                args: args
-            }
-
-            switch(cmd){
-                case 'shuffle':
-                    command.shuffle(bot, messageArgs);
-                    break;
-                case 'strat':
-                    command.strat(bot, messageArgs);
-                    break;
-                default:
-                    bot.sendMessage({
-                        to:channelID,
-                        message: `${cmd} is not a supported command`
-                    })
-            } // End switch
+            command.exclamation(bot, user, userID, channelID, message, evt)
         } // end if message starts with !
     } catch(err) {
+        console.log(err);
         logger.error(err);
         bot.sendMessage({
             to: channelID,
