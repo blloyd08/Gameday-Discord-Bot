@@ -22,14 +22,14 @@ module.exports = {
                 strat.strat(bot, messageArgs);
                 break;
             case 'echo':
-                echo(bot,messageArgs);
+                echo(bot, messageArgs);
                 break;
             default:
                 bot.sendMessage({
                     to:channelID,
                     message: `${cmd} is not a supported command`
                 })
-        } // End switch
+        }
     }
 }
 
