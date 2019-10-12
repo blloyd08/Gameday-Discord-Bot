@@ -22,25 +22,11 @@ var bot = new Discord.Client({
 var jobs = [];
 
 bot.on('ready', function (evt){
-    bot.serverID = Object.keys(bot.servers)[0];
-    bot.logger = logger;
-    setChannelsByType(bot.serverID);
+    initBotVariables();
+    scheduleJobs();
 
     bot.logger.info('Connected');
     bot.logger.info(`Logged in as: ${bot.username}_(${bot.id}). Server: ${bot.serverID}`);
-
-    jobs.push(schedule.scheduleJob('0 0 18 * * 3', function(){
-        bot.sendMessage({
-            to: bot.textChannelID,
-            message: `<@&314584437751021575> Gameday is tomorrow (Thursday) 6 PM(PST)! :fire: :fire: :fire: `
-        })
-    }));
-    jobs.push(schedule.scheduleJob('0 0 18 * * 4', function(){
-        bot.sendMessage({
-            to: bot.textChannelID,
-            message: `<@&314584437751021575> It's MothaFukinGameDay time! Lets go!!! `
-        })
-    }));
 });
 
 bot.on('disconnect', function(errMsg, code){
@@ -69,6 +55,12 @@ bot.on('message', function(user, userID, channelID, message, evt){
     }
 });
 
+function initBotVariables(){
+    bot.serverID = Object.keys(bot.servers)[0];
+    bot.logger = logger;
+    setChannelsByType(bot.serverID);
+}
+
 function setChannelsByType(serverID){
     var afkChannelID = bot.servers[serverID].afk_channel_id;
     var voiceChannels = [];
@@ -85,4 +77,19 @@ function setChannelsByType(serverID){
         }
     }
     bot.voiceChannels = voiceChannels;
+}
+
+function scheduleJobs(){
+    jobs.push(schedule.scheduleJob('0 0 18 * * 3', function(){
+        bot.sendMessage({
+            to: bot.textChannelID,
+            message: `<@&314584437751021575> Gameday is tomorrow (Thursday) 6 PM(PST)! :fire: :fire: :fire: `
+        })
+    }));
+    jobs.push(schedule.scheduleJob('0 0 18 * * 4', function(){
+        bot.sendMessage({
+            to: bot.textChannelID,
+            message: `<@&314584437751021575> It's MothaFukinGameDay time! Lets go!!! `
+        })
+    }));
 }
