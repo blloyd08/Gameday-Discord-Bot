@@ -1,3 +1,4 @@
+let Permission = require('../permission')
 
 var shuffledTeams = {
     all: [],
@@ -11,7 +12,7 @@ module.exports.shuffle =  (bot, messageArgs) => {
     var args = messageArgs.args;
     var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
     var isValid = verifyShuffle(bot, messageArgs, userChannel, firstArg);
-    //TODO: Add permission checking for rights to move users
+
     if (isValid){
         switch (firstArg){
             case "reset":
@@ -75,6 +76,11 @@ function shuffleChannelMembers(bot,messageArgs, voiceChannel){
 }
 
 function moveShuffledMembers(bot, messageArgs){
+    var valid = validateMovePermission(bot, messageArgs);
+    if (!valid){
+        return;
+    }
+
     moveUsers(bot, bot.voiceChannels[0].id, shuffledTeams.team1);
     moveUsers(bot, bot.voiceChannels[1].id, shuffledTeams.team2);
     shuffledTeams.moved = true;
@@ -85,6 +91,10 @@ function moveShuffledMembers(bot, messageArgs){
 }
 
 function resetShuffle(bot, messageArgs){
+    var valid = validateMovePermission(bot, messageArgs);
+    if (!valid){
+        return;
+    }
     moveUsers(bot, bot.voiceChannels[0].id, shuffledTeams.all);
     shuffledTeams = {
         all: [],
@@ -156,4 +166,15 @@ function shuffle(a) {
         [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
+}
+
+function validateMovePermission(bot, messageArgs){
+    var permissionGranted = Permission.canMoveUsers(bot, messageArgs.userID);
+    if (!permissionGranted){
+        bot.sendMessage({
+            to: messageArgs.channelID,
+            message: `You do not have permission to move users`
+        });
+    }
+    return permissionGranted;
 }
