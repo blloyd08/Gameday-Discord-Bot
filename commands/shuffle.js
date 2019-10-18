@@ -1,4 +1,4 @@
-let Permission = require('../permission')
+let permissions = require('discord.js').Permissions;
 
 var shuffledTeams = {
     all: [],
@@ -7,42 +7,32 @@ var shuffledTeams = {
     moved: true
 }
 
-module.exports.shuffle =  (bot, messageArgs) => {
-    let userChannel = getUserVoiceChannel(bot, messageArgs.userID);
-    var args = messageArgs.args;
+module.exports.shuffle =  (bot, message, args) => {
     var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
-    var isValid = verifyShuffle(bot, messageArgs, userChannel, firstArg);
+    var isValid = verifyShuffle(message, firstArg);
 
     if (isValid){
         switch (firstArg){
             case "reset":
-                resetShuffle(bot, messageArgs);
+                resetShuffle(bot, message);
                 break;
             case "move":
-                moveShuffledMembers(bot, messageArgs);
+                moveShuffledMembers(bot, message);
                 break;
             default:
-                shuffleChannelMembers(bot, messageArgs, userChannel);
+                shuffleChannelMembers(message);
         }
     }
-    
 }
 
-function verifyShuffle(bot, messageArgs, userChannel, firstArg){
-    if (!userChannel){
-        bot.sendMessage({
-            to: messageArgs.channelID,
-            message: "You must be in a voice channel to shuffle"
-        });
+function verifyShuffle(message, firstArg){
+    if (!message.member.voice.channel){
+        message.reply("You must be in a voice channel to shuffle");
         return false;
     }
 
-    var memberIDs = Object.keys(userChannel.members);
-    if (memberIDs.length < 2 && firstArg != "reset"){
-        bot.sendMessage({
-            to: messageArgs.channelID,
-            message: "You must have at least 2 users in your voice channel to shuffle"
-        });
+    if ( message.member.voice.channel.members.size < 2 && firstArg != "reset"){
+        message.reply("You must have at least 2 users in your voice channel to shuffle");
         return false;
     }
 
@@ -52,95 +42,57 @@ function verifyShuffle(bot, messageArgs, userChannel, firstArg){
 function buildTeamMessage(teamNumber, users){
     var message = "Team " + teamNumber + "\n";
     for (var i = 0; i < users.length; i++){
-        message += users[i].username + "\n";
+        message += users[i].user.username + "\n";
     }
     return message;
 }
 
-function shuffleChannelMembers(bot,messageArgs, voiceChannel){
-    if (!voiceChannel)
+function shuffleChannelMembers(message){
+    if (!message.member.voice.channel)
         return;
-    var members = Object.keys(voiceChannel.members);
+    var members = message.member.voice.channel.members.array();
     var teams = randomlySplitArray(members);
-    shuffledTeams.team1 = getUsers(bot, teams[0]);
-    shuffledTeams.team2 = getUsers(bot, teams[1]);
+    shuffledTeams.team1 = teams[0];
+    shuffledTeams.team2 = teams[1];
     shuffledTeams.all = shuffledTeams.team1.concat(shuffledTeams.team2);
     shuffledTeams.moved = false;
 
     var team1Message = buildTeamMessage(1, shuffledTeams.team1);
     var team2Message = buildTeamMessage(2, shuffledTeams.team2);
-    bot.sendMessage({
-        to: messageArgs.channelID,
-        message: team1Message + "\n\n" + team2Message
-    });
+    message.channel.send( team1Message + "\n\n" + team2Message);
 }
 
-function moveShuffledMembers(bot, messageArgs){
-    var valid = validateMovePermission(bot, messageArgs);
+function moveShuffledMembers(bot, message){
+    var valid = validateMovePermission(message);
     if (!valid){
         return;
     }
 
-    moveUsers(bot, bot.voiceChannels[0].id, shuffledTeams.team1);
-    moveUsers(bot, bot.voiceChannels[1].id, shuffledTeams.team2);
+    moveUsers(bot.voiceChannels[0], shuffledTeams.team1);
+    moveUsers(bot.voiceChannels[1], shuffledTeams.team2);
     shuffledTeams.moved = true;
-    bot.sendMessage({
-        to: messageArgs.channelID,
-        message: "Moved users into teams"
-    });
+    message.reply("Moved users into teams");
 }
 
-function resetShuffle(bot, messageArgs){
-    var valid = validateMovePermission(bot, messageArgs);
+function resetShuffle(bot, message){
+    var valid = validateMovePermission(message);
     if (!valid){
         return;
     }
-    moveUsers(bot, bot.voiceChannels[0].id, shuffledTeams.all);
+    moveUsers(bot.voiceChannels[0], shuffledTeams.all);
     shuffledTeams = {
         all: [],
         team1: [],
         team2: [],
         moved: true
     }
-    bot.sendMessage({
-        to: messageArgs.channelID,
-        message: "Shuffle has been reset"
-    });
+    message.reply("Shuffle has been reset");
 }
 
-function moveUsers(bot, channelID, users){
+function moveUsers(voiceChannel, users){
     for (var i=0; i < users.length; i++){
-        moveUser(bot, channelID, users[i]);
+        users[i].voice.setChannel(voiceChannel);
     }
-}
-
-function moveUser(bot, channelID, user) {
-    bot.logger.info(`Moving user: ${user.user}`)
-    bot.moveUserTo({
-        serverID: bot.serverID,
-        userID: user.id,
-        channelID: channelID
-    }, (message) => {
-        bot.logger.info(`Moved user ${user.username}`);
-        if (message)
-            bot.logger.error(message);
-    })
-}
-
-function getUsers(bot, userIds){
-    var users = []
-    userIds.forEach((userId) => {
-        users.push(bot.users[userId]);
-    })
-    return users;
-}
-
-// find the voice channel that the user is connected to
-function getUserVoiceChannel(bot, userID){
-    var member = bot.servers[bot.serverID].members[userID];
-    if (!member || !member.voice_channel_id)
-        return null;
-    return bot.channels[member.voice_channel_id];
 }
 
 function randomlySplitArray(fullArray){
@@ -168,13 +120,10 @@ function shuffle(a) {
     return a;
 }
 
-function validateMovePermission(bot, messageArgs){
-    var permissionGranted = Permission.canMoveUsers(bot, messageArgs.userID);
+function validateMovePermission(message){
+    var permissionGranted = message.member.hasPermission(permissions.FLAGS.MOVE_MEMBERS);
     if (!permissionGranted){
-        bot.sendMessage({
-            to: messageArgs.channelID,
-            message: `You do not have permission to move users`
-        });
+        message.reply(`You do not have permission to move users`);
     }
     return permissionGranted;
 }

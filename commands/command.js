@@ -3,30 +3,20 @@ let strat = require('./strat')
 
 
 module.exports = {
-    exclamation: (bot, user, userID, channelID, message, evt) => {
-        var args = message.substring(1).split(' ');
+    exclamation: (bot, message) => {
+        var args = message.content.substring(1).split(' ');
         var cmd = args[0];
         args = args.splice(1);
-        var messageArgs = {
-            user: user,
-            userID: userID,
-            channelID: channelID,
-            message: message,
-            args: args
-        }
 
         switch(cmd){
             case 'shuffle':
-                Shuffle.shuffle(bot, messageArgs);
+                Shuffle.shuffle(bot, message, args);
                 break;
             case 'strat':
-                strat.strat(bot, messageArgs);
+                strat.strat(message);
                 break;
             default:
-                bot.sendMessage({
-                    to:channelID,
-                    message: `${cmd} is not a supported command`
-                })
+                message.reply(`${cmd} is not a supported command`);
         }
     }
 }

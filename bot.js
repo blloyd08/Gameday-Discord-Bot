@@ -1,4 +1,4 @@
-var Discord = require('discord.io');
+var Discord = require('discord.js');
 var logger = require('winston');
 var auth = require('./auth.json');
 var command = require('./commands/command');
@@ -13,83 +13,60 @@ logger.add(new logger.transports.Console, {
 logger.level = 'debug';
 
 // Initialize Discord Bot
-var bot = new Discord.Client({
-    token: auth.token,
-    autorun: true
-});
+var bot = new Discord.Client();
 
 
 var jobs = [];
 
-bot.on('ready', function (evt){
+bot.on('ready',() => {
+    logger.info('Connected');
     initBotVariables();
     scheduleJobs();
-
-    bot.logger.info('Connected');
-    bot.logger.info(`Logged in as: ${bot.username}_(${bot.id}). Server: ${bot.serverID}`);
 });
 
-bot.on('disconnect', function(errMsg, code){
-    logger.info(`Bot disconnected (${code})`);
-    if (errMsg){
-        console.log(errMsg);
-        logger.error(errMsg);
-    }
-    jobs.forEach((job)=> {
-        job.cancel();
-    });
-});
-
-bot.on('message', function(user, userID, channelID, message, evt){
+bot.on('message', message => {
     try {
-        if (message.substring(0,1) == '!'){
-            command.exclamation(bot, user, userID, channelID, message, evt)
+        if (message.content.substring(0,1) == '!'){
+            command.exclamation(bot, message)
         }
     } catch(err) {
         console.log(err);
-        logger.error(err);
-        bot.sendMessage({
-            to: channelID,
-            message: "Failed to run command"
-        });
+        message.reply("Failed to run command");
     }
 });
 
 function initBotVariables(){
-    bot.serverID = Object.keys(bot.servers)[0];
     bot.logger = logger;
     setChannelsByType(bot.serverID);
 }
 
 function setChannelsByType(serverID){
-    var afkChannelID = bot.servers[serverID].afk_channel_id;
+    //var afkChannelID = bot.servers[serverID].afk_channel_id;
+    var afkChannelID = bot.guilds.first().afkChannelID;
     var voiceChannels = [];
-    for (channelID in bot.channels){
-        var channel = bot.channels[channelID];
+    var textChannels = [];
+    bot.channels.forEach(channel =>{
         switch (channel.type){
-            case 2:
-                if (channel.id != afkChannelID)
+            case "voice":
+                if (channel.id !== afkChannelID)
                     voiceChannels.push(channel);
                 break;
-            case 0:
-                bot.textChannelID = channel.id;
+            case "text":
+                textChannels.push(channel);
                 break;
         }
-    }
+    });
     bot.voiceChannels = voiceChannels;
+    bot.textChannels = textChannels;
 }
 
 function scheduleJobs(){
     jobs.push(schedule.scheduleJob('0 0 18 * * 3', function(){
-        bot.sendMessage({
-            to: bot.textChannelID,
-            message: `<@&314584437751021575> Gameday is tomorrow (Thursday) 6 PM(PST)! :fire: :fire: :fire: `
-        })
+        bot.textChannels[0].send(`<@&314584437751021575> Gameday is tomorrow (Thursday) 6 PM(PST)! :fire: :fire: :fire: `);
     }));
     jobs.push(schedule.scheduleJob('0 0 18 * * 4', function(){
-        bot.sendMessage({
-            to: bot.textChannelID,
-            message: `<@&314584437751021575> It's MothaFukinGameDay time! Lets go!!! `
-        })
+        bot.textChannels[0].send(`<@&314584437751021575> It's MothaFukinGameDay time! Lets go!!! `);
     }));
 }
+
+bot.login(auth.token)
