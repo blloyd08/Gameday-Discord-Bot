@@ -5,14 +5,15 @@
         "230901581330120725": "whiteClaw.mp3",
         "226918313505062912": "duel.mp3",
         "247084386762227722": "chicken.mp3",
-        "270075157177958400": "duel.mp3"
+        "270075157177958400": "wazowski.mp3"
     },
     "clips": {
         "victory": "victory.mp3",
         "duel": "duel.mp3",
         "ffx": "ffx.mp3",
         "wicked": "wicked.mp3",
-        "whiteClaw": "whiteClaw.mp3",
-        "chicken": "chicken.mp3"
+        "whiteclaw": "whiteClaw.mp3",
+        "chicken": "chicken.mp3",
+        "wazowski": "wazowski.mp3"
     }
 }
