@@ -1,6 +1,6 @@
-let Shuffle = require('./shuffle')
-let strat = require('./strat')
-
+let { shuffle } = require('./shuffle');
+let { strat } = require('./strat');
+let { audioCommand } = require('./audio');
 
 module.exports = {
     exclamation: (bot, message) => {
@@ -10,10 +10,13 @@ module.exports = {
 
         switch(cmd){
             case 'shuffle':
-                Shuffle.shuffle(bot, message, args);
+                shuffle(bot, message, args);
                 break;
             case 'strat':
-                strat.strat(message);
+                strat(message);
+                break;
+            case 'play':
+                audioCommand(bot, message, args);
                 break;
             default:
                 message.reply(`${cmd} is not a supported command`);

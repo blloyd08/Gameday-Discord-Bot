@@ -1,8 +1,9 @@
 var Discord = require('discord.js');
 var logger = require('winston');
-var auth = require('./auth.json');
+var auth = require('./config/auth.json');
 var command = require('./commands/command');
 var schedule = require('node-schedule')
+var { handleUserJoinVoiceChannel } = require('./commands/audio');
 
 
 // Configure logger
@@ -15,7 +16,6 @@ logger.level = 'debug';
 // Initialize Discord Bot
 var bot = new Discord.Client();
 
-
 var jobs = [];
 
 bot.on('ready',() => {
@@ -26,14 +26,27 @@ bot.on('ready',() => {
 
 bot.on('message', message => {
     try {
-        if (message.content.substring(0,1) == '!'){
-            command.exclamation(bot, message)
-        }
+        switch(message.content.substring(0,1)){
+            case '!': 
+                command.exclamation(bot, message);
+                break;
+        } 
     } catch(err) {
         console.log(err);
         message.reply("Failed to run command");
     }
 });
+
+bot.on('voiceStateUpdate', (oldState, newState) =>{
+    if (!newState.member.user.bot){
+        if (!newState.channel){
+            console.log(`USER ${newState.member.user.username}(${newState.member.user.id}) LEFT VOICE CHANNEL`);
+        } else if (!oldState.channel){
+            console.log(`USER ${newState.member.user.username}(${newState.member.user.id}) HAS JOINED VOICE CHANNEL`)
+            handleUserJoinVoiceChannel(newState);
+        }
+    }
+})
 
 function initBotVariables(){
     bot.logger = logger;
@@ -41,7 +54,6 @@ function initBotVariables(){
 }
 
 function setChannelsByType(serverID){
-    //var afkChannelID = bot.servers[serverID].afk_channel_id;
     var afkChannelID = bot.guilds.first().afkChannelID;
     var voiceChannels = [];
     var textChannels = [];
