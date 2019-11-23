@@ -8,6 +8,9 @@ module.exports.audioCommand =  (bot, message, args) => {
         case "":
             playUserAudioClip(message);
             break;
+        case "list":
+            listAudioClips(message);
+            break;
         default:
             playAudioClipByTitle(message, firstArg);
     }
@@ -18,6 +21,11 @@ module.exports.handleUserJoinVoiceChannel = (voiceState) => {
     if (voiceState.channel && userFilePath){
         playAudioClip(voiceState.channel,userFilePath);
     }
+}
+
+function listAudioClips(message){
+    let audioClipNames = Object.keys(userAudioConfig.clips);
+    message.reply(`\n${audioClipNames.join(", ")}`);
 }
 
 function getUserAudioClipPath(userId){
