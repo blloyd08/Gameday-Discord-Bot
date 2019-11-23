@@ -38,13 +38,17 @@ bot.on('message', message => {
 });
 
 bot.on('voiceStateUpdate', (oldState, newState) =>{
-    if (!newState.member.user.bot){
-        if (!newState.channel){
-            console.log(`USER ${newState.member.user.username}(${newState.member.user.id}) LEFT VOICE CHANNEL`);
-        } else if (!oldState.channel){
-            console.log(`USER ${newState.member.user.username}(${newState.member.user.id}) HAS JOINED VOICE CHANNEL`)
-            handleUserJoinVoiceChannel(newState);
+    try{
+        if (!newState.member.user.bot){
+            if (!newState.channel){
+                console.log(`USER ${newState.member.user.username}(${newState.member.user.id}) LEFT VOICE CHANNEL`);
+            } else if (!oldState.channel){
+                console.log(`USER ${newState.member.user.username}(${newState.member.user.id}) HAS JOINED VOICE CHANNEL`)
+                handleUserJoinVoiceChannel(newState);
+            }
         }
+    } catch(err){
+        console.error(err);
     }
 })
 
@@ -73,6 +77,13 @@ function setChannelsByType(serverID){
 }
 
 function scheduleJobs(){
+
+    // Cancel jobs previously setup. This can happen if the bot disconnects and reconnects.
+    if (jobs.length > 0){
+        jobs.forEach((job) => {
+            schedule.cancelJob(job);
+        });
+    }
     jobs.push(schedule.scheduleJob('0 0 18 * * 3', function(){
         bot.textChannels[0].send(`<@&314584437751021575> Gameday is tomorrow (Thursday) 6 PM(PST)! :fire: :fire: :fire: `);
     }));
