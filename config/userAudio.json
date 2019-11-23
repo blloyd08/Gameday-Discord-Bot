@@ -1,11 +1,12 @@
 {
     "users": {
-        "138124903974043648": "ffx.mp3",
+        "138124903974043648": "hiFamily.mp3",
         "139061458922110976": "wicked.mp3",
         "230901581330120725": "whiteClaw.mp3",
-        "226918313505062912": "duel.mp3",
+        "226918313505062912": "thebest.mp3",
         "247084386762227722": "chicken.mp3",
-        "270075157177958400": "wazowski.mp3"
+        "270075157177958400": "wazowski.mp3",
+        "189027658498048010": "badGirl.mp3"
     },
     "clips": {
         "victory": "victory.mp3",
@@ -14,6 +15,12 @@
         "wicked": "wicked.mp3",
         "whiteclaw": "whiteClaw.mp3",
         "chicken": "chicken.mp3",
-        "wazowski": "wazowski.mp3"
+        "wazowski": "wazowski.mp3",
+        "best": "thebest.mp3",
+        "laugh": "laugh.mp3",
+        "spooby": "spooby.mp3",
+        "hifamily": "hiFamily.mp3",
+        "gotyou": "gotyou.mp3",
+        "boom": "boom.mp3"
     }
 }

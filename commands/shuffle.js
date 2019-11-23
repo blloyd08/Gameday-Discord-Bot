@@ -1,10 +1,8 @@
 let permissions = require('discord.js').Permissions;
 
 var shuffledTeams = {
-    all: [],
     team1: [],
-    team2: [],
-    moved: true
+    team2: []
 }
 
 module.exports.shuffle =  (bot, message, args) => {
@@ -50,12 +48,14 @@ function buildTeamMessage(teamNumber, users){
 function shuffleChannelMembers(message){
     if (!message.member.voice.channel)
         return;
+    shuffledTeams = {
+        team1: [],
+        team2: []
+    }
     var members = message.member.voice.channel.members.array();
     var teams = randomlySplitArray(members);
     shuffledTeams.team1 = teams[0];
     shuffledTeams.team2 = teams[1];
-    shuffledTeams.all = shuffledTeams.team1.concat(shuffledTeams.team2);
-    shuffledTeams.moved = false;
 
     var team1Message = buildTeamMessage(1, shuffledTeams.team1);
     var team2Message = buildTeamMessage(2, shuffledTeams.team2);
@@ -70,7 +70,6 @@ function moveShuffledMembers(bot, message){
 
     moveUsers(bot.voiceChannels[0], shuffledTeams.team1);
     moveUsers(bot.voiceChannels[1], shuffledTeams.team2);
-    shuffledTeams.moved = true;
     message.reply("Moved users into teams");
 }
 
@@ -79,13 +78,8 @@ function resetShuffle(bot, message){
     if (!valid){
         return;
     }
-    moveUsers(bot.voiceChannels[0], shuffledTeams.all);
-    shuffledTeams = {
-        all: [],
-        team1: [],
-        team2: [],
-        moved: true
-    }
+    moveUsers(bot.voiceChannels[0], shuffledTeams.team2);
+
     message.reply("Shuffle has been reset");
 }
 

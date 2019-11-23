@@ -5,7 +5,7 @@ let { audioCommand } = require('./audio');
 module.exports = {
     exclamation: (bot, message) => {
         var args = message.content.substring(1).split(' ');
-        var cmd = args[0];
+        var cmd = args[0].toLowerCase();
         args = args.splice(1);
 
         switch(cmd){
