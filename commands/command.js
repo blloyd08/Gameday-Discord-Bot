@@ -15,11 +15,12 @@ module.exports = {
             case 'strat':
                 strat(message);
                 break;
-            case 'play':
-                audioCommand(bot, message, args);
-                break;
             default:
                 message.reply(`${cmd} is not a supported command`);
         }
+    },
+    dollar: (bot, message) => {
+        var args = message.content.substring(1).split(' ');
+        audioCommand(bot, message, args);
     }
 }
