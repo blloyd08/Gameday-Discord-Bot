@@ -30,6 +30,8 @@ bot.on('message', message => {
             case '!': 
                 command.exclamation(bot, message);
                 break;
+            case '$':
+                command.dollar(bot,message);
         } 
     } catch(err) {
         console.log(err);
