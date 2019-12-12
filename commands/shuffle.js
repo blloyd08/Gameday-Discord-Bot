@@ -75,7 +75,6 @@ function moveShuffledMembers(bot, message){
     }
     playAudioClipByFileName(message.member.voice.channel, "fight.mp3")
         .then(() => {
-            console.log('Moving users');
             moveUsers(bot.voiceChannels[0], shuffledTeams.team1);
             moveUsers(bot.voiceChannels[1], shuffledTeams.team2);
             message.reply("Moved users into teams");
