@@ -30,12 +30,19 @@ function verifyShuffle(message, firstArg){
         return false;
     }
 
-    if ( message.member.voice.channel.members.size < 2 && firstArg != "reset"){
+
+    if ( getVoiceChannelMembers(message.member.voice.channel).size < 2 && firstArg != "reset"){
         message.reply("You must have at least 2 users in your voice channel to shuffle");
         return false;
     }
 
     return true;
+}
+
+function getVoiceChannelMembers(voiceChannel){
+    return voiceChannel.members.filter((member) => {
+        return !member.user.bot;
+    });
 }
 
 function buildTeamMessage(teamNumber, users){
@@ -53,7 +60,7 @@ function shuffleChannelMembers(message){
         team1: [],
         team2: []
     }
-    var members = message.member.voice.channel.members.array();
+    var members = getVoiceChannelMembers(message.member.voice.channel).array();
     var teams = randomlySplitArray(members);
     shuffledTeams.team1 = teams[0];
     shuffledTeams.team2 = teams[1];
