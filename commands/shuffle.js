@@ -1,4 +1,5 @@
 let permissions = require('discord.js').Permissions;
+var { playAudioClipByFileName } = require('../commands/audio');
 
 var shuffledTeams = {
     team1: [],
@@ -65,12 +66,23 @@ function shuffleChannelMembers(message){
 function moveShuffledMembers(bot, message){
     var valid = validateMovePermission(message);
     if (!valid){
+        message.reply("You don't have permission to move users.");
         return;
     }
-
-    moveUsers(bot.voiceChannels[0], shuffledTeams.team1);
-    moveUsers(bot.voiceChannels[1], shuffledTeams.team2);
-    message.reply("Moved users into teams");
+    if (!message.member.voice.channel){
+        message.reply('You need to join a voice channel first!');
+        return;
+    }
+    playAudioClipByFileName(message.member.voice.channel, "fight.mp3")
+        .then(() => {
+            console.log('Moving users');
+            moveUsers(bot.voiceChannels[0], shuffledTeams.team1);
+            moveUsers(bot.voiceChannels[1], shuffledTeams.team2);
+            message.reply("Moved users into teams");
+        }).catch((error) => {
+            console.log(error);
+            message.reply("Failed to move users into teams");
+        }); 
 }
 
 function resetShuffle(bot, message){
