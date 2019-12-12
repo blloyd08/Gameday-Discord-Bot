@@ -63,11 +63,9 @@ function playAudioClip(voiceChannel, filePath) {
         try {
             voiceChannel.join()
             .then(connection => {
-                console.log("Starting sound")
                 const dispatcher = connection.play(filePath, {volume: 0.7})
                 dispatcher.on('finish', () => {
                     voiceChannel.leave();
-                    console.log("Finished playing sound");
                     resolve();
                 })
             })
