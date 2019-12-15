@@ -1,6 +1,12 @@
 var userAudioConfig = require('../config/userAudio.json');
 var audioClipPath = `${__dirname}\\..\\audioClips\\`;
 
+let userAudioHistory = {
+    countLimit: 5,
+    expireAfter: 1, // hours
+    records: {}
+};
+
 module.exports.audioCommand =  (bot, message, args) => {
     var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
 
@@ -58,6 +64,27 @@ function getAudioClipPathByTitle(title){
     return `${audioClipPath}${audioClipFileName}`;
 }
 
+function hasExcededAudioCountLimit(userId){
+    var expiredTime = new Date();
+    expiredTime.setDate(expiredTime.getHours() - userAudioHistory.expireAfter);
+
+    if (!(userId in userAudioHistory.records)){
+        userAudioHistory.records[userId] = [];
+    }
+
+    let history = userAudioHistory.records[userId].filter((playedDate) => {
+        return playedDate > expiredTime;
+    });
+
+    var hasExcededCount = history.length >= userAudioHistory.countLimit
+    if (!hasExcededCount){
+        history.push(new Date());
+    }
+    userAudioHistory.records[userId] = history;
+
+    return hasExcededCount;
+}
+
 function playAudioClip(voiceChannel, filePath) {
     return new Promise((resolve, reject) => {
         try {
@@ -91,16 +118,20 @@ function playUserAudioClip(message){
 }
 
 function playAudioClipByTitle(message, title){
-    var voiceChannel = message.member.voice.channel;
-    if (voiceChannel) {
-        var userFilePath = getAudioClipPathByTitle(title);
-        if (userFilePath){
-            playAudioClip(voiceChannel,userFilePath)
-                .catch(err => { console.log(err)});
-        } else {
-            message.reply(`Audio clip ${title} not found`);
-        }
+    if (hasExcededAudioCountLimit(message.member.id)){
+        message.reply(`You have exceded the number of audio clips that can be played. Only ${userAudioHistory.countLimit} clips can be played in ${userAudioHistory.expireAfter} hour.`);
     } else {
-        message.reply('You need to join a voice channel first!');
+        var voiceChannel = message.member.voice.channel;
+        if (voiceChannel) {
+            var userFilePath = getAudioClipPathByTitle(title);
+            if (userFilePath){
+                playAudioClip(voiceChannel,userFilePath)
+                    .catch(err => { console.log(err)});
+            } else {
+                message.reply(`Audio clip ${title} not found`);
+            }
+        } else {
+            message.reply('You need to join a voice channel first!');
+        }
     }
 }
