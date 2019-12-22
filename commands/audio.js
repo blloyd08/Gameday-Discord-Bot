@@ -73,9 +73,8 @@ function hasExcededAudioCountLimit(userId){
     }
 
     let history = userAudioHistory.records[userId].filter((playedDate) => {
-        return playedDate > expiredTime;
+        return playedDate < expiredTime;
     });
-
     var hasExcededCount = history.length >= userAudioHistory.countLimit
     if (!hasExcededCount){
         history.push(new Date());
