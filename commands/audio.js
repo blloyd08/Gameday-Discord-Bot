@@ -95,7 +95,12 @@ function playAudioClip(voiceChannel, filePath) {
                     resolve();
                 })
             })
-            .catch(() => reject(new Error("Failed to join voice channel")));
+            .catch((error) => 
+                {
+                    console.error(error);
+                    reject(new Error("Failed to join voice channel"))
+        
+                });
         } catch(error) {
             if (voiceChannel)
                 voiceChannel.leave();
