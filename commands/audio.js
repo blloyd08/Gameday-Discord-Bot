@@ -1,4 +1,4 @@
-var userAudioConfig = require('../config/userAudio.json');
+import userAudioConfig from '../config/userAudio.json';
 var audioClipPath = `${__dirname}\\..\\audioClips\\`;
 
 let userAudioHistory = {
@@ -7,7 +7,7 @@ let userAudioHistory = {
     records: {}
 };
 
-module.exports.audioCommand =  (bot, message, args) => {
+export function audioCommand(bot, message, args) {
     var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
 
     switch (firstArg){
@@ -22,7 +22,7 @@ module.exports.audioCommand =  (bot, message, args) => {
     }
 }
 
-module.exports.handleUserJoinVoiceChannel = (voiceState) => {
+export function handleUserJoinVoiceChannel(voiceState) {
     var userFilePath = getUserAudioClipPath(voiceState.member.user.id);
     if (voiceState.channel && userFilePath){
         playAudioClip(voiceState.channel,userFilePath)
@@ -30,7 +30,7 @@ module.exports.handleUserJoinVoiceChannel = (voiceState) => {
     }
 }
 
-module.exports.playAudioClipByFileName = (voiceChannel, fileName) => {
+export function playAudioClipByFileName(voiceChannel, fileName) {
     return new Promise(function(resolve, reject){
         if (voiceChannel && fileName){
             var filePath = audioClipPath + fileName;
@@ -43,12 +43,12 @@ module.exports.playAudioClipByFileName = (voiceChannel, fileName) => {
     });
 }
 
-function listAudioClips(message){
+function listAudioClips(message) {
     let audioClipNames = Object.keys(userAudioConfig.clips);
     message.reply(`\n${audioClipNames.join(", ")}`);
 }
 
-function getUserAudioClipPath(userId){
+function getUserAudioClipPath(userId) {
     var userFileName = userAudioConfig.users[userId];
     if (!userFileName){
         return
@@ -123,7 +123,7 @@ function playUserAudioClip(message){
 
 function playAudioClipByTitle(message, title){
     if (hasExcededAudioCountLimit(message.member.id)){
-        message.reply(`You have exceded the number of audio clips that can be played. Only ${userAudioHistory.countLimit} clips can be played in ${userAudioHistory.expireAfter} hour.`);
+        message.reply(`You have exceeded the number of audio clips that can be played. Only ${userAudioHistory.countLimit} clips can be played in ${userAudioHistory.expireAfter} hour.`);
     } else {
         var voiceChannel = message.member.voice.channel;
         if (voiceChannel) {

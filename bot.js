@@ -1,9 +1,9 @@
-var Discord = require('discord.js');
-var logger = require('winston');
-var auth = require('./config/auth.json');
-var command = require('./commands/command');
-var schedule = require('node-schedule')
-var { handleUserJoinVoiceChannel } = require('./commands/audio');
+import Discord from 'discord.js';
+import logger from 'winston';
+import auth from './config/auth.json';
+import command from './commands/command';
+import schedule from 'node-schedule';
+import { handleUserJoinVoiceChannel } from './commands/audio';
 
 
 // Configure logger

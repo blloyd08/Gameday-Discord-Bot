@@ -4,6 +4,7 @@
     "description": "My Test Bot",
     "main": "bot.js",
     "author": "Brian Lloyd",
+    "type": "module",
     "scripts": {
         "start": "nodemon bot.js"
     },

@@ -1,12 +1,12 @@
-let permissions = require('discord.js').Permissions;
-var { playAudioClipByFileName } = require('../commands/audio');
+import { playAudioClipByFileName } from '../commands/audio';
+import { Permissions } from 'discord.js';
 
 var shuffledTeams = {
     team1: [],
     team2: []
 }
 
-module.exports.shuffle =  (bot, message, args) => {
+export function shuffle(bot, message, args) {
     var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
     var isValid = verifyShuffle(message, firstArg);
 
@@ -133,7 +133,7 @@ function shuffle(a) {
 }
 
 function validateMovePermission(message){
-    var permissionGranted = message.member.hasPermission(permissions.FLAGS.MOVE_MEMBERS);
+    var permissionGranted = message.member.hasPermission(Permissions.FLAGS.MOVE_MEMBERS);
     if (!permissionGranted){
         message.reply(`You do not have permission to move users`);
     }
