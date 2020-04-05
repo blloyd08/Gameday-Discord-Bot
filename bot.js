@@ -60,10 +60,10 @@ function initBotVariables(){
 }
 
 function setChannelsByType(serverID){
-    var afkChannelID = bot.guilds.first().afkChannelID;
+    var afkChannelID = bot.guilds.cache.first().afkChannelID;
     var voiceChannels = [];
     var textChannels = [];
-    bot.channels.forEach(channel =>{
+    bot.channels.cache.forEach(channel =>{
         switch (channel.type){
             case "voice":
                 if (channel.id !== afkChannelID)
