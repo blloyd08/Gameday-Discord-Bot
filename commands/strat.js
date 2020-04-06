@@ -1,6 +1,6 @@
-var request = require('request');
+import request from 'request';
 
-module.exports.strat =  (message) => {
+export function strat(message) {
     request.post('https://squadstrats.com/wp-content/themes/squat/twooff_data.php',callback = (error, res, body) => {
         var strat = JSON.parse(body);
         displayStrat(message.channel, strat);
