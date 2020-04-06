@@ -1,27 +1,59 @@
 import { playAudioClipByFileName } from '../commands/audio.js';
 import discord from 'discord.js';
+import { Command } from './command.js'
+import { CommandMethod } from './commandMethod.js'
+
+
+export class ShuffleCommand extends Command {
+    constructor(){
+        super("!", "shuffle", [
+            new DefaultCommand(),
+            new MoveCommand(),
+            new ResetCommand()
+        ]);
+    }
+
+    execute(bot, message, args){
+        var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
+        var isValid = verifyShuffle(message, firstArg);
+    
+        if (isValid){
+            switch (firstArg){
+                case "reset":
+                    resetShuffle(bot, message);
+                    break;
+                case "move":
+                    moveShuffledMembers(bot, message);
+                    break;
+                default:
+                    shuffleChannelMembers(message);
+            }
+        }
+    }
+}
+
+class DefaultCommand extends CommandMethod {
+    constructor(){
+        super(undefined, "Split all voice channel members into two teams then display the teams");
+    }
+}
+
+class ResetCommand extends CommandMethod{
+    constructor(){
+        super("reset", "Moves all members back to the first voice channel", undefined);
+    }
+}
+
+class MoveCommand extends CommandMethod {
+    constructor() {
+        super("move", "Move Team 2 to the second voice channel", undefined);
+    }
+}
+
 
 var shuffledTeams = {
     team1: [],
     team2: []
-}
-
-export function shuffle(bot, message, args) {
-    var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
-    var isValid = verifyShuffle(message, firstArg);
-
-    if (isValid){
-        switch (firstArg){
-            case "reset":
-                resetShuffle(bot, message);
-                break;
-            case "move":
-                moveShuffledMembers(bot, message);
-                break;
-            default:
-                shuffleChannelMembers(message);
-        }
-    }
 }
 
 function verifyShuffle(message, firstArg){
