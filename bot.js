@@ -19,7 +19,7 @@ var bot = new Discord.Client();
 bot.on('ready',() => {
     logger.info('Connected');
     bot.logger = logger;
-    setChannelsByType(bot.serverID);
+    setChannelsByType();
     scheduleJobs(bot);
 });
 
@@ -42,8 +42,7 @@ bot.on('voiceStateUpdate', (oldState, newState) =>{
     }
 })
 
-
-function setChannelsByType(serverID){
+function setChannelsByType(){
     var afkChannelID = bot.guilds.cache.first().afkChannelID;
     var voiceChannels = [];
     var textChannels = [];

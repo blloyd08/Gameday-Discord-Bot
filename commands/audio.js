@@ -16,9 +16,21 @@ export class AudioCommand extends Command {
 
     execute(bot, message, args){
         var args = message.content.substring(1).split(' ');
-        audioCommand(bot, message, args);
+        var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
+
+        switch (firstArg){
+            case "":
+                playUserAudioClip(message);
+                break;
+            case "list":
+                listAudioClips(message);
+                break;
+            default:
+                playAudioClipByTitle(message, firstArg);
+        }
     }
 
+    // AudioCommand doesn't use the name of the command when making a call. Remove name from output.
     toString(){
         let commandOutput = "";
         this.methods.forEach(method => {
@@ -59,20 +71,6 @@ let userAudioHistory = {
     records: {}
 };
 
-export function audioCommand(bot, message, args) {
-    var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
-
-    switch (firstArg){
-        case "":
-            playUserAudioClip(message);
-            break;
-        case "list":
-            listAudioClips(message);
-            break;
-        default:
-            playAudioClipByTitle(message, firstArg);
-    }
-}
 
 export function handleUserJoinVoiceChannel(voiceState) {
     var userFilePath = getUserAudioClipPath(voiceState.member.user.id);

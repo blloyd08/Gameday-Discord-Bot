@@ -14,7 +14,21 @@ export class ShuffleCommand extends Command {
     }
 
     execute(bot, message, args){
-        shuffle(bot, message, args);
+        var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
+        var isValid = verifyShuffle(message, firstArg);
+    
+        if (isValid){
+            switch (firstArg){
+                case "reset":
+                    resetShuffle(bot, message);
+                    break;
+                case "move":
+                    moveShuffledMembers(bot, message);
+                    break;
+                default:
+                    shuffleChannelMembers(message);
+            }
+        }
     }
 }
 
@@ -40,24 +54,6 @@ class MoveCommand extends CommandMethod {
 var shuffledTeams = {
     team1: [],
     team2: []
-}
-
-export function shuffle(bot, message, args) {
-    var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
-    var isValid = verifyShuffle(message, firstArg);
-
-    if (isValid){
-        switch (firstArg){
-            case "reset":
-                resetShuffle(bot, message);
-                break;
-            case "move":
-                moveShuffledMembers(bot, message);
-                break;
-            default:
-                shuffleChannelMembers(message);
-        }
-    }
 }
 
 function verifyShuffle(message, firstArg){
