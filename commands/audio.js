@@ -1,7 +1,50 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
+import { Command } from './command.js'
+import { CommandMethod } from './commandMethod.js'
 
+
+export class AudioCommand extends Command {
+    constructor(){
+        super("$", "", [
+            new DefaultCommand(),
+            new ClipCommand(),
+            new ListCommand()
+        ]);
+    }
+
+    execute(bot, message, args){
+        var args = message.content.substring(1).split(' ');
+        audioCommand(bot, message, args);
+    }
+
+    toString(){
+        let commandOutput = "";
+        this.methods.forEach(method => {
+          commandOutput += `\n${this.prefix}${method.toString()}`;
+        })
+        return commandOutput;
+      }
+}
+
+class DefaultCommand extends CommandMethod {
+    constructor(){
+        super(undefined, "Play the audio clip that's assigned to you when you join voice channel");
+    }
+}
+
+class ClipCommand extends CommandMethod {
+    constructor(){
+        super("<name of audio clip>", "Play the audio clip with the given name");
+    }
+}
+
+class ListCommand extends CommandMethod {
+    constructor(){
+        super("list", "List all of the available audio clips");
+    }
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const jsonPath = path.join(__dirname, '..','config','userAudio.json');
