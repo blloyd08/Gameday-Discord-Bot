@@ -16,14 +16,10 @@ logger.level = 'debug';
 // Initialize Discord Bot
 var bot = new Discord.Client();
 
-function initBotVariables(){
-    bot.logger = logger;
-    setChannelsByType(bot.serverID);
-}
-
 bot.on('ready',() => {
     logger.info('Connected');
-    initBotVariables();
+    bot.logger = logger;
+    setChannelsByType(bot.serverID);
     scheduleJobs(bot);
 });
 
