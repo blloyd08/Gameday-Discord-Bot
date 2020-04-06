@@ -1,5 +1,5 @@
-import { playAudioClipByFileName } from '../commands/audio';
-import { Permissions } from 'discord.js';
+import { playAudioClipByFileName } from '../commands/audio.js';
+import discord from 'discord.js';
 
 var shuffledTeams = {
     team1: [],
@@ -108,7 +108,7 @@ function moveUsers(voiceChannel, users){
 }
 
 function randomlySplitArray(fullArray){
-    var shuffledArray = shuffle(fullArray);
+    var shuffledArray = shuffleArray(fullArray);
     var midpoint = Math.floor(shuffledArray.length / 2);
     var isOdd = shuffledArray.length % 2 == 1;
     var a = shuffledArray.slice(0, midpoint);
@@ -124,7 +124,7 @@ function randomlySplitArray(fullArray){
     return [a, b];
 }
 
-function shuffle(a) {
+function shuffleArray(a) {
     for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
@@ -133,7 +133,7 @@ function shuffle(a) {
 }
 
 function validateMovePermission(message){
-    var permissionGranted = message.member.hasPermission(Permissions.FLAGS.MOVE_MEMBERS);
+    var permissionGranted = message.member.hasPermission(discord.Permissions.FLAGS.MOVE_MEMBERS);
     if (!permissionGranted){
         message.reply(`You do not have permission to move users`);
     }

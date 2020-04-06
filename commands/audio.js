@@ -1,5 +1,14 @@
-import userAudioConfig from '../config/userAudio.json';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
+
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const jsonPath = path.join(__dirname, '..','config','userAudio.json');
 var audioClipPath = `${__dirname}\\..\\audioClips\\`;
+
+let userAudioConfig = JSON.parse(readFileSync(jsonPath));
+console.log("User Audio Config", userAudioConfig);
 
 let userAudioHistory = {
     countLimit: 5,

@@ -1,9 +1,9 @@
 import Discord from 'discord.js';
 import logger from 'winston';
-import auth from './config/auth.json';
-import command from './commands/command';
+import auth from './config/auth.js';
 import schedule from 'node-schedule';
-import { handleUserJoinVoiceChannel } from './commands/audio';
+import { exclamation, dollar} from './commands/command.js';
+import { handleUserJoinVoiceChannel } from './commands/audio.js';
 
 
 // Configure logger
@@ -28,10 +28,10 @@ bot.on('message', message => {
     try {
         switch(message.content.substring(0,1)){
             case '!': 
-                command.exclamation(bot, message);
+                exclamation(bot, message);
                 break;
             case '$':
-                command.dollar(bot,message);
+                dollar(bot,message);
         } 
     } catch(err) {
         console.log(err);

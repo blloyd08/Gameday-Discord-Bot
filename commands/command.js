@@ -1,6 +1,6 @@
-import { shuffle } from './shuffle';
-import { strat } from './strat';
-import { audioCommand } from './audio';
+import { shuffle } from './shuffle.js';
+import { strat } from './strat.js';
+import { audioCommand } from './audio.js';
 
 
 export function exclamation(bot, message) {
