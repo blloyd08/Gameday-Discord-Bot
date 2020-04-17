@@ -1,8 +1,6 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { readFileSync } from 'fs';
 import { Command } from './command.js'
 import { CommandMethod } from './commandMethod.js'
+import { getAudioConfig, getAudioFilePath} from '../util.js';
 
 
 export class AudioCommand extends Command {
@@ -58,13 +56,6 @@ class ListCommand extends CommandMethod {
     }
 }
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const jsonPath = path.join(__dirname, '..','config','userAudio.json');
-var audioClipPath = `${__dirname}\\..\\audioClips\\`;
-
-let userAudioConfig = JSON.parse(readFileSync(jsonPath));
-console.log("User Audio Config", userAudioConfig);
-
 let userAudioHistory = {
     countLimit: 5,
     expireAfter: 1, // hours
@@ -83,7 +74,7 @@ export function handleUserJoinVoiceChannel(voiceState) {
 export function playAudioClipByFileName(voiceChannel, fileName) {
     return new Promise(function(resolve, reject){
         if (voiceChannel && fileName){
-            var filePath = audioClipPath + fileName;
+            var filePath = getAudio + fileName;
             playAudioClip(voiceChannel, filePath)
                 .then(() => {resolve()})
                 .catch(err => { reject(err) });
@@ -94,24 +85,24 @@ export function playAudioClipByFileName(voiceChannel, fileName) {
 }
 
 function listAudioClips(message) {
-    let audioClipNames = Object.keys(userAudioConfig.clips);
+    let audioClipNames = Object.keys(getAudioConfig().clips);
     message.reply(`\n${audioClipNames.join(", ")}`);
 }
 
 function getUserAudioClipPath(userId) {
-    var userFileName = userAudioConfig.users[userId];
+    var userFileName = getAudioConfig().users[userId];
     if (!userFileName){
         return
     }
-    return `${audioClipPath}${userFileName}`;
+    return getAudioFilePath(userFileName);
 }
 
 function getAudioClipPathByTitle(title){
-    var audioClipFileName = userAudioConfig.clips[title];
+    var audioClipFileName = getAudioConfig().clips[title];
     if (!audioClipFileName){
         return
     }
-    return `${audioClipPath}${audioClipFileName}`;
+    return getAudioFilePath(audioClipFileName);
 }
 
 function hasExcededAudioCountLimit(userId){
@@ -136,12 +127,14 @@ function hasExcededAudioCountLimit(userId){
 
 function playAudioClip(voiceChannel, filePath) {
     return new Promise((resolve, reject) => {
+        console.log("Playing audio clip:", filePath);
         try {
             voiceChannel.join()
             .then(connection => {
                 const dispatcher = connection.play(filePath, {volume: 0.7})
                 dispatcher.on('finish', () => {
                     voiceChannel.leave();
+                    console.log("Finished playing audio file", filePath);
                     resolve();
                 })
             })
