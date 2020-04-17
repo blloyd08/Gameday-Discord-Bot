@@ -68,12 +68,10 @@ export class CommandManager{
       let commands = this.commands[prefix];
       commands.forEach(command => {
         commandsString += `${command.toString()}\n`;
-        //console.log(command.toString());
       })
       commandsString += "\n";
     })
     return commandsString;
-    //console.log(this.commands);
   }
 }
 

@@ -5,6 +5,7 @@ import { scheduleJobs } from './jobs.js'
 
 import { handleUserJoinVoiceChannel } from './commands/audio.js';
 import { botCommandManager } from './commands/commandManager.js';
+import { initialize_audio_files } from './aws/startup.js'
 
 // Configure logger
 logger.remove(logger.transports.Console);
@@ -15,6 +16,7 @@ logger.level = 'debug';
 
 // Initialize Discord Bot
 var bot = new Discord.Client();
+initialize_audio_files();
 
 bot.on('ready',() => {
     logger.info('Connected');
