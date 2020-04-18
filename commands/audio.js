@@ -134,7 +134,6 @@ function playAudioClip(voiceChannel, filePath) {
                 const dispatcher = connection.play(filePath, {volume: 0.7})
                 dispatcher.on('finish', () => {
                     voiceChannel.leave();
-                    console.log("Finished playing audio file", filePath);
                     resolve();
                 })
             })
