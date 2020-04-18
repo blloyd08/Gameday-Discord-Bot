@@ -1,6 +1,7 @@
 import { ShuffleCommand } from './shuffle.js';
 import { StratCommand } from './strat.js'
 import { AudioCommand } from './audio.js'
+import { AdminCommand } from './admin.js'
 
 
 export class CommandManager{
@@ -78,5 +79,6 @@ export class CommandManager{
 export const botCommandManager =  new CommandManager([
   new ShuffleCommand(),
   new StratCommand(),
-  new AudioCommand()
+  new AudioCommand(),
+  new AdminCommand()
 ]);
