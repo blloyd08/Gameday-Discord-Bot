@@ -58,11 +58,17 @@ export class CommandManager{
   }
 
   sendHelp(bot, message){
-    message.reply(`${this.getCommandsString()}`);
+    message.member.createDM()
+    .then(channel => {
+        channel.send(`${this.getCommandsString()}`);
+    })
+    .catch(err =>{
+        console.error("Failed to send help to user:", err);
+    })
   }
 
   getCommandsString(){
-    let commandsString = "";
+    let commandsString = "COMMAND NAME \t\t\t\t\t\t\t DESCRIPTION \n";
     let prefixes = Object.keys(this.commands);
 
     prefixes.forEach(prefix => {

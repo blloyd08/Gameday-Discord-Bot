@@ -12,35 +12,57 @@ export class AudioCommand extends Command {
         ]);
     }
 
-    execute(bot, message, args){
+    parseParameters(bot, message, args){
         var args = message.content.substring(1).split(' ');
-        var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
+        var methodName = args.length > 0 ? args[0].toLowerCase() : undefined;
+        if (methodName === '')
+            methodName = undefined;
+        return {
+          bot: bot,
+          message: message,
+          args: args,
+          methodName: methodName
+        }
+    }
 
-        switch (firstArg){
-            case "":
-                playUserAudioClip(message);
-                break;
-            case "list":
-                listAudioClips(message);
-                break;
-            default:
-                playAudioClipByTitle(message, firstArg);
+    executeMethod(params){
+        if (params.methodName in this.methods){
+          this.methods[params.methodName].execute(params)
+        } else {
+            params["title"] = params.methodName;
+            this.methods["<name of audio clip>"].execute(params);
         }
     }
 
     // AudioCommand doesn't use the name of the command when making a call. Remove name from output.
     toString(){
         let commandOutput = "";
-        this.methods.forEach(method => {
+        let methodKeys = Object.keys(this.methods);
+
+        methodKeys.forEach(key => {
+          let method = this.methods[key];
           commandOutput += `\n${this.prefix}${method.toString()}`;
         })
+
         return commandOutput;
-      }
+    }
 }
 
 class DefaultCommand extends CommandMethod {
     constructor(){
         super(undefined, "Play the audio clip that's assigned to you when you join voice channel");
+    }
+
+    execute(params){
+        var voiceChannel = params.message.member.voice.channel;
+        if (voiceChannel) {
+            var userFilePath = getUserAudioClipPath(params.message.member.user.id);
+            if (userFilePath)
+                playAudioClip(voiceChannel,userFilePath)
+                    .catch(err => { console.log(err)});
+        } else {
+            params.message.reply('You need to join a voice channel first!');
+        }
     }
 }
 
@@ -48,11 +70,35 @@ class ClipCommand extends CommandMethod {
     constructor(){
         super("<name of audio clip>", "Play the audio clip with the given name");
     }
+
+    execute(params){
+        if (hasExcededAudioCountLimit(params.message.member.id)){
+            params.message.reply(`You have exceeded the number of audio clips that can be played. Only ${userAudioHistory.countLimit} clips can be played in ${userAudioHistory.expireAfter} hour.`);
+        } else {
+            var voiceChannel = params.message.member.voice.channel;
+            if (voiceChannel) {
+                var userFilePath = getAudioClipPathByTitle(params.title);
+                if (userFilePath){
+                    playAudioClip(voiceChannel,userFilePath)
+                        .catch(err => { console.log(err)});
+                } else {
+                    params.message.reply(`Audio clip ${params.title} not found`);
+                }
+            } else {
+                params.message.reply('You need to join a voice channel first!');
+            }
+        }
+    }
 }
 
 class ListCommand extends CommandMethod {
     constructor(){
         super("list", "List all of the available audio clips");
+    }
+
+    execute(params){
+        let audioClipNames = Object.keys(getAudioConfig().clips);
+        params.message.reply(`\n${audioClipNames.join(", ")}`);
     }
 }
 
@@ -84,10 +130,6 @@ export function playAudioClipByFileName(voiceChannel, fileName) {
     });
 }
 
-function listAudioClips(message) {
-    let audioClipNames = Object.keys(getAudioConfig().clips);
-    message.reply(`\n${audioClipNames.join(", ")}`);
-}
 
 function getUserAudioClipPath(userId) {
     var userFileName = getAudioConfig().users[userId];
@@ -149,35 +191,4 @@ function playAudioClip(voiceChannel, filePath) {
             reject(error);
         }
     });
-}
-
-function playUserAudioClip(message){
-    var voiceChannel = message.member.voice.channel;
-    if (voiceChannel) {
-        var userFilePath = getUserAudioClipPath(message.member.user.id);
-        if (userFilePath)
-            playAudioClip(voiceChannel,userFilePath)
-                .catch(err => { console.log(err)});
-    } else {
-        message.reply('You need to join a voice channel first!');
-    }
-}
-
-function playAudioClipByTitle(message, title){
-    if (hasExcededAudioCountLimit(message.member.id)){
-        message.reply(`You have exceeded the number of audio clips that can be played. Only ${userAudioHistory.countLimit} clips can be played in ${userAudioHistory.expireAfter} hour.`);
-    } else {
-        var voiceChannel = message.member.voice.channel;
-        if (voiceChannel) {
-            var userFilePath = getAudioClipPathByTitle(title);
-            if (userFilePath){
-                playAudioClip(voiceChannel,userFilePath)
-                    .catch(err => { console.log(err)});
-            } else {
-                message.reply(`Audio clip ${title} not found`);
-            }
-        } else {
-            message.reply('You need to join a voice channel first!');
-        }
-    }
 }

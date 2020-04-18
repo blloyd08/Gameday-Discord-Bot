@@ -12,24 +12,35 @@ export class AdminCommand extends Command {
         ]);
     }
 
-    execute(bot, message, args) {
-        if (validateAdministratorPermission(message)) {
-            var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
-
-            switch (firstArg){
-                case "updateaudio":
-                    updateAudioFiles(bot, message);
-                    break;
-                default:
-                    listUsers(bot, message);
-            }
+    onValidate(params){
+        var permissionGranted = params.message.member.hasPermission(discord.Permissions.FLAGS.ADMINISTRATOR);
+        if (!permissionGranted){
+            params.message.reply(`You do not have admin permission`);
         }
+        return permissionGranted;
     }
+
 }
 
 class DefaultCommand extends CommandMethod {
     constructor(){
         super(undefined, "Return a list of user ids");
+    }
+
+    execute(params){
+        var members = params.bot.guilds.cache.first().members.cache;
+        var membersText = [];
+        members.forEach(member => {
+            membersText.push(`${member.user.username}(${member.user.id}))`)
+            console.log(`${member.user.username}(${member.user.id}))`);
+        })
+        params.message.member.createDM()
+        .then(channel => {
+            channel.send(membersText.join("\n"));
+        })
+        .catch(err =>{
+            console.error("Failed to send list of all users:", err);
+        })
     }
 }
 
@@ -37,33 +48,9 @@ class UpdateAudioCommand extends CommandMethod{
     constructor(){
         super("updateaudio", "Download missing audio files", undefined);
     }
-}
 
-function updateAudioFiles(bot, message){
-    initialize_audio_files();
-    message.reply(`Audio files have been updated`);
-}
-
-function listUsers(bot, message) {
-    var members = bot.guilds.cache.first().members.cache;
-    var membersText = [];
-    members.forEach(member => {
-        membersText.push(`${member.user.username}(${member.user.id}))`)
-        console.log(`${member.user.username}(${member.user.id}))`);
-    })
-    message.member.createDM()
-    .then(channel => {
-        channel.send(membersText.join("\n"));
-    })
-    .catch(err =>{
-        console.error("Failed to send list of all users:", err);
-    })
-}
-
-function validateAdministratorPermission(message){
-    var permissionGranted = message.member.hasPermission(discord.Permissions.FLAGS.ADMINISTRATOR);
-    if (!permissionGranted){
-        message.reply(`You do not have admin permission`);
+    execute(params){
+        initialize_audio_files();
+        params.message.reply(`Audio files have been updated`);
     }
-    return permissionGranted;
 }

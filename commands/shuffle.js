@@ -13,28 +13,29 @@ export class ShuffleCommand extends Command {
         ]);
     }
 
-    execute(bot, message, args){
-        var firstArg = args.length > 0 ? args[0].toLowerCase() : "";
-        var isValid = verifyShuffle(message, firstArg);
-    
-        if (isValid){
-            switch (firstArg){
-                case "reset":
-                    resetShuffle(bot, message);
-                    break;
-                case "move":
-                    moveShuffledMembers(bot, message);
-                    break;
-                default:
-                    shuffleChannelMembers(message);
-            }
+    onValidate(params){
+        if (!params.message.member.voice.channel){
+            params.message.reply("You must be in a voice channel to shuffle");
+            return false;
         }
+    
+        if (getVoiceChannelMembers(params.message.member.voice.channel).size < 2 && params.methodName != "reset"){
+            params.message.reply("You must have at least 2 users in your voice channel to shuffle");
+            return false;
+        }
+    
+        return true;
     }
+
 }
 
 class DefaultCommand extends CommandMethod {
     constructor(){
         super(undefined, "Split all voice channel members into two teams then display the teams");
+    }
+
+    execute(params){
+        shuffleChannelMembers(params.message);
     }
 }
 
@@ -42,11 +43,19 @@ class ResetCommand extends CommandMethod{
     constructor(){
         super("reset", "Moves all members back to the first voice channel", undefined);
     }
+
+    execute(params){
+        resetShuffle(params.bot, params.message);
+    }
 }
 
 class MoveCommand extends CommandMethod {
     constructor() {
         super("move", "Move Team 2 to the second voice channel", undefined);
+    }
+
+    execute(params){
+        moveShuffledMembers(bot, message);
     }
 }
 
@@ -56,20 +65,6 @@ var shuffledTeams = {
     team2: []
 }
 
-function verifyShuffle(message, firstArg){
-    if (!message.member.voice.channel){
-        message.reply("You must be in a voice channel to shuffle");
-        return false;
-    }
-
-
-    if ( getVoiceChannelMembers(message.member.voice.channel).size < 2 && firstArg != "reset"){
-        message.reply("You must have at least 2 users in your voice channel to shuffle");
-        return false;
-    }
-
-    return true;
-}
 
 function getVoiceChannelMembers(voiceChannel){
     return voiceChannel.members.filter((member) => {
