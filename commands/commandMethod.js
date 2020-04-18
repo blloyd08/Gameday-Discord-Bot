@@ -5,6 +5,10 @@ export class CommandMethod {
       this.example = example;
   }
 
+  execute(bot, message, args) {
+    
+  }
+
   toString(){
     let name = this.name ? this.name : "";
     return `${name}\t\t\t\t\t\tDescription: ${this.documentation}`

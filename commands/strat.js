@@ -9,18 +9,18 @@ export class StratCommand extends Command {
             new DefaultCommand()
         ]);
     }
-
-    execute(bot, message, args){
-        request.post('https://squadstrats.com/wp-content/themes/squat/twooff_data.php',function (error, res, body)  {
-            var strat = JSON.parse(body);
-            displayStrat(message.channel, strat);
-        });
-    }
 }
 
 class DefaultCommand extends CommandMethod {
     constructor(){
         super(undefined, "Displays a StratRoulette for attacher and defender");
+    }
+
+    execute(params){
+        request.post('https://squadstrats.com/wp-content/themes/squat/twooff_data.php',function (error, res, body)  {
+            var strat = JSON.parse(body);
+            displayStrat(params.message.channel, strat);
+        });
     }
 }
 
