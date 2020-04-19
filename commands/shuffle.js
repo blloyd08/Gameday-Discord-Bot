@@ -55,7 +55,7 @@ class MoveCommand extends CommandMethod {
     }
 
     execute(params){
-        moveShuffledMembers(bot, message);
+        moveShuffledMembers(params.bot, params.message);
     }
 }
 

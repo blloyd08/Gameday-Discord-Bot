@@ -120,7 +120,7 @@ export function handleUserJoinVoiceChannel(voiceState) {
 export function playAudioClipByFileName(voiceChannel, fileName) {
     return new Promise(function(resolve, reject){
         if (voiceChannel && fileName){
-            var filePath = getAudio + fileName;
+            var filePath = getAudioFilePath(fileName);
             playAudioClip(voiceChannel, filePath)
                 .then(() => {resolve()})
                 .catch(err => { reject(err) });
