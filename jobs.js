@@ -48,8 +48,8 @@ function getGamedayJobParameters() {
 
 function buildJobParameters(cronsSchedule, groupMessage) {
     return {
-        message: cronsSchedule,
-        schedule: groupMessage
+        schedule: cronsSchedule,
+        message: groupMessage
     }
 }
 
