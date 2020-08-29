@@ -1,10 +1,12 @@
 import schedule from 'node-schedule';
+import { messageEpicFreeGamesTweet } from "./twitter.js"
 
 // Day of the week that gameday is scheduled (Sunday = 0)
 const gamdayDayIndex = 4;
 
 var jobs = [];
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const gamedayGroup = '<@&314584437751021575>';
 
 export function scheduleJobs(bot) {
 
@@ -16,6 +18,10 @@ export function scheduleJobs(bot) {
     // Notify users that gameday has started
     var gamedayJobParameters = getGamedayJobParameters();
 
+    // Check for tweet about new Epic free games and share tweet
+    jobs.push(schedule.scheduleJob('0 0 17 * * 5', function () {
+        messageEpicFreeGamesTweet(bot, gamedayGroup);
+    }));
 
     addMessageGamedayGroupJob(dayBeforeJobParameters, bot);
     addMessageGamedayGroupJob(gamedayJobParameters, bot);
@@ -54,7 +60,7 @@ function buildJobParameters(cronsSchedule, groupMessage) {
 }
 
 function formatMessageToGamedayGroup(message) {
-    return `<@&314584437751021575> ${message}`;
+    return `${gamedayGroup} ${message}`;
 }
 
 function formatCronJobSchedule(dayOfWeek) {
