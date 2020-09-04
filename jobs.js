@@ -3,6 +3,7 @@ import { messageEpicFreeGamesTweet } from "./twitter.js"
 
 // Day of the week that gameday is scheduled (Sunday = 0)
 const gamdayDayIndex = 4;
+const EPIC_FREE_GAME_JOB_SCHEDULE = '0 0 17 * * 4'
 
 var jobs = [];
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -19,7 +20,8 @@ export function scheduleJobs(bot) {
     var gamedayJobParameters = getGamedayJobParameters();
 
     // Check for tweet about new Epic free games and share tweet
-    jobs.push(schedule.scheduleJob('0 0 17 * * 5', function () {
+    messageEpicFreeGamesTweet(bot, gamedayGroup);
+    jobs.push(schedule.scheduleJob(EPIC_FREE_GAME_JOB_SCHEDULE, function () {
         messageEpicFreeGamesTweet(bot, gamedayGroup);
     }));
 
