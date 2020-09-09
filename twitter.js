@@ -25,8 +25,6 @@ export function messageEpicFreeGamesTweet(bot, gamedayGroup) {
                 var tweetLink = TWITTER_LINK_FORMAT + pinnedTweet.id;
                 console.log("Tweet Link:", tweetLink);
                 bot.textChannels[0].send(`${gamedayGroup} Check out this free game from Epic\n ${tweetLink}`);
-            } else {
-                console.error("The pinned tweet didn't look like free games or the tweet file has a duplicate value")
             }
         } else {
             console.error("Did not find a pinned tweet");
@@ -36,7 +34,6 @@ export function messageEpicFreeGamesTweet(bot, gamedayGroup) {
 
 
 function getPinnedTweet(tweetResponseBody){
-    //console.log('body:', tweetResponseBody);
     var response = JSON.parse(tweetResponseBody);
     var pinnedTweet = response && response.includes && response.includes.tweets && response.includes.tweets[0];
     
@@ -45,7 +42,14 @@ function getPinnedTweet(tweetResponseBody){
 }
 
 function isFreeGamesTweet(tweetText) {
-    return tweetText.includes("FREE THIS WEEK") || tweetText.includes("FREE to claim");
+    var isFreeGame = tweetText.includes("FREE THIS WEEK") 
+        || tweetText.includes("FREE to claim")
+        || tweetText.includes("is free on the Epic Games Store");
+        
+    if (!isFreeGame) {
+        console.error("Tweet text doesn't look like a free game");
+    }
+    return isFreeGame;
 }
 
 function updateTweetFile(newTweetId) {
