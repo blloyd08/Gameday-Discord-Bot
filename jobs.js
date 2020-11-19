@@ -3,7 +3,7 @@ import { messageEpicFreeGamesTweet } from "./twitter.js"
 
 // Day of the week that gameday is scheduled (Sunday = 0)
 const gamdayDayIndex = 4;
-const EPIC_FREE_GAME_JOB_SCHEDULE = '0 0 17 * * 4'
+const EPIC_FREE_GAME_JOB_SCHEDULE = '0 0 17 * * *'
 
 var jobs = [];
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];

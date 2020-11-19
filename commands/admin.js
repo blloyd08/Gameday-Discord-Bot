@@ -31,8 +31,8 @@ class DefaultCommand extends CommandMethod {
         var members = params.bot.guilds.cache.first().members.cache;
         var membersText = [];
         members.forEach(member => {
-            membersText.push(`${member.user.username}(${member.user.id}))`)
-            console.log(`${member.user.username}(${member.user.id}))`);
+            membersText.push(`${member.user.username},${member.user.id}`)
+            console.log(`${member.user.username}(${member.user.id})`);
         })
         params.message.member.createDM()
         .then(channel => {
