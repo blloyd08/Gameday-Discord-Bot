@@ -26,6 +26,9 @@ bot.on('ready',() => {
 });
 
 bot.on('message', message => {
+    // Ignore messages that aren't from a guild
+    if (!message.guild) return;
+
     botCommandManager.handleMessage(bot, message);
 });
 

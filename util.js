@@ -15,3 +15,9 @@ export function getAudioConfig() {
 export function getAudioFilePath(fileName) {
   return path.join(__dirname, 'audioClips', fileName)
 }
+
+export function deleteMessage(message, timeoutMillis) {
+  if (message.deletable){
+    message.delete({ timeout: 5000 });
+  }
+}
