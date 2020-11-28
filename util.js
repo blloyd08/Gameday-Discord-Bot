@@ -17,7 +17,7 @@ export function getAudioFilePath(fileName) {
 }
 
 export function deleteMessage(message, timeoutMillis) {
-  if (message.deletable){
-    message.delete({ timeout: 5000 });
+  if (message.deletable) {
+    message.delete({ timeout: timeoutMillis });
   }
 }

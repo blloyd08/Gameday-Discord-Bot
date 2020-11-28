@@ -1,3 +1,5 @@
+import { deleteMessage } from '../util.js';
+
 export class Command {
     constructor(prefix, name, methods){
         this.prefix = prefix;
@@ -40,6 +42,7 @@ export class Command {
       var params = this.parseParameters(bot, message, args);
       if (this.onValidate(params)) {
         this.executeMethod(params);
+        deleteMessage(params.message, 10000);
       }
       this.onFinishExecute(params)
     }
