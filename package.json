@@ -9,7 +9,7 @@
         "start": "node --experimental-modules bot.js"
     },
     "dependencies": {
-        "@discordjs/opus": "^0.1.0",
+        "@discordjs/opus": "^0.3.3",
         "@std/esm": "^0.26.0",
         "aws-sdk": "^2.799.0",
         "discord.js": "^12.5.1",
@@ -19,7 +19,7 @@
         "winston": "^3.3.3"
     },
     "devDependencies": {
-        "eslint": "^6.5.1",
+        "eslint": "^7.14.0",
         "nodemon": "^2.0.6"
     }
 }
