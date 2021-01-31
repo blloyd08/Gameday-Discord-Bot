@@ -42,10 +42,8 @@ function getPinnedTweet(tweetResponseBody){
 }
 
 function isFreeGamesTweet(tweetText) {
-    var isFreeGame = tweetText.includes("FREE THIS WEEK") 
-        || tweetText.includes("FREE to claim")
-        || tweetText.includes("FREE for a limited time")
-        || tweetText.includes("is free on the Epic Games Store");
+    var lowerTweetText = tweetText.toLowerCase();
+    var isFreeGame = lowerTweetText.includes(" free ");
         
     if (!isFreeGame) {
         console.error("Tweet text doesn't look like a free game");
