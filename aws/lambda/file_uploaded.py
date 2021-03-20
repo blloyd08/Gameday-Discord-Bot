@@ -5,6 +5,7 @@ import boto3
 print('Loading function')
 
 s3 = boto3.client('s3')
+ses = boto3.client('ses')
 BUCKET_NAME = "gameday-audio"
 AUDIO_JSON_FILENAME = "userAudio.json"
 
@@ -39,7 +40,44 @@ def lambda_handler(event, context):
     # # write the update json file
     json_data = (bytes(json.dumps(testData).encode('UTF-8')))
     write_json(json_data)
+
+    # send email notification that a new file was added
+    send_notification_email(folderPath.fileName)
+
     return testData["users"]
+
+def send_notification_email(fileName):
+    receipient = ""
+    charset = "UTF-8"
+    body_text = ("Gamdeday Audio bot \r\n Added new file " + fileName)
+    body_html = "<html><head></head><body><h1>Gameday Audio bot: New File</h1><p> Added new file " + fileName + "</p></body></html>"
+
+    response = ses.send_email(
+        Destination={
+            'ToAddresses': [
+                receipient
+            ]
+        },
+        Message={
+            'Body':{
+                'Html': {
+                    'Charset': charset,
+                    'Data': body_html
+                },
+                'Text': {
+                    'Charset': charset,
+                    'Data': body_text
+                }
+            },
+            'Subject': {
+                'Charset': charset,
+                'Data': "New Gameday Audio clip"
+            }
+        },
+        Source=receipient
+    )
+    print("Email sent!")
+    print("Message id:" + response['MessageId'])
     
 def get_audio_json():
     json_data = {}
