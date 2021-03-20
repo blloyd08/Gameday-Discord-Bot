@@ -2,7 +2,6 @@ import { Command } from './command.js'
 import { CommandMethod } from './commandMethod.js'
 import { getAudioConfig, getAudioFilePath} from '../util.js';
 
-
 export class AudioCommand extends Command {
     constructor(){
         super("$", "", [
@@ -72,8 +71,10 @@ class ClipCommand extends CommandMethod {
     }
 
     execute(params){
-        if (hasExcededAudioCountLimit(params.message.member.id)){
-            params.message.reply(`You have exceeded the number of audio clips that can be played. Only ${userAudioHistory.countLimit} clips can be played in ${userAudioHistory.expireAfter} hour.`);
+        var unthrottleTime = getUnthrottleTime(params.message.member.id);
+        if (unthrottleTime){
+            console.log(`USER ${params.message.member.user.username}(${params.message.member.user.id}) exceded their play limit`);
+            params.message.reply(`You have exceeded the number of audio clips that can be played. Only ${userAudioHistory.throttleLimit} clips can be played in ${userAudioHistory.throttleDuration} hour. You can play a new clip at ${unthrottleTime.toLocaleTimeString()} (PST)`);
         } else {
             var voiceChannel = params.message.member.voice.channel;
             if (voiceChannel) {
@@ -103,10 +104,12 @@ class ListCommand extends CommandMethod {
 }
 
 let userAudioHistory = {
-    countLimit: 5,
-    expireAfter: 1, // hours
+    throttleLimit: 5,
+    throttleDuration: 1, // hours
     records: {}
 };
+
+const ONE_HOUR = 60 * 60 * 1000;
 
 
 export function handleUserJoinVoiceChannel(voiceState) {
@@ -147,24 +150,28 @@ function getAudioClipPathByTitle(title){
     return getAudioFilePath(audioClipFileName);
 }
 
-function hasExcededAudioCountLimit(userId){
-    var expiredTime = new Date();
-    expiredTime.setDate(expiredTime.getHours() - userAudioHistory.expireAfter);
-
+function getUnthrottleTime(userId){
+    var offset = (ONE_HOUR * userAudioHistory.throttleDuration);
+    var throttleBeginTime = new Date(Date.now() - offset);
     if (!(userId in userAudioHistory.records)){
         userAudioHistory.records[userId] = [];
     }
 
     let history = userAudioHistory.records[userId].filter((playedDate) => {
-        return playedDate < expiredTime;
+        return playedDate >= throttleBeginTime;
     });
-    var hasExcededCount = history.length >= userAudioHistory.countLimit
+    var hasExcededCount = history.length >= userAudioHistory.throttleLimit
     if (!hasExcededCount){
         history.push(new Date());
     }
     userAudioHistory.records[userId] = history;
 
-    return hasExcededCount;
+    var unthrottleTime = null;
+    if (hasExcededCount) {
+        unthrottleTime = new Date(Math.min(...history) + offset);
+    }
+
+    return unthrottleTime;
 }
 
 function playAudioClip(voiceChannel, filePath) {
