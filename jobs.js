@@ -2,8 +2,9 @@ import schedule from 'node-schedule';
 import { messageEpicFreeGamesTweet } from "./twitter.js"
 
 // Day of the week that gameday is scheduled (Sunday = 0)
-const gamdayDayIndex = 4;
-const EPIC_FREE_GAME_JOB_SCHEDULE = '0 0 17 * * *'
+const GAMEDAY_DAY_OF_WEEK = 4;
+const GAMEDAY_START_HOUR = 18;
+const JOB_TIMEZONE = "America/Los_Angeles"
 
 var jobs = [];
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -21,7 +22,8 @@ export function scheduleJobs(bot) {
 
     // Check for tweet about new Epic free games and share tweet
     messageEpicFreeGamesTweet(bot, gamedayGroup);
-    jobs.push(schedule.scheduleJob(EPIC_FREE_GAME_JOB_SCHEDULE, function () {
+    var epic_job_schedule = buildScheduleRule(GAMEDAY_START_HOUR -1);
+    jobs.push(schedule.scheduleJob(epic_job_schedule, function () {
         messageEpicFreeGamesTweet(bot, gamedayGroup);
     }));
 
@@ -37,9 +39,8 @@ function addMessageGamedayGroupJob(jobParameters, bot) {
 }
 
 function getDayBeforeJobParameters() {
-    var dayBeforeIndex = gamdayDayIndex - 1;
-    var dayBeforeName = days[gamdayDayIndex];
-    var dayBeforeSchedule = formatCronJobSchedule(dayBeforeIndex);
+    var dayBeforeName = days[GAMEDAY_DAY_OF_WEEK];
+    var dayBeforeSchedule = buildScheduleRule(GAMEDAY_START_HOUR, GAMEDAY_DAY_OF_WEEK - 1);
     var dayBeforeMessage = `Gameday is tomorrow (${dayBeforeName}) 6 PM(PST)! :fire: :fire: :fire: `;
 
     var parameters = buildJobParameters(dayBeforeSchedule, dayBeforeMessage);
@@ -48,7 +49,7 @@ function getDayBeforeJobParameters() {
 
 function getGamedayJobParameters() {
     var gamedayMessage = formatMessageToGamedayGroup("It's MothaFukinGameDay time! Lets go!!! ");
-    var gamedaySchedule = formatCronJobSchedule(gamdayDayIndex);
+    var gamedaySchedule = buildScheduleRule(GAMEDAY_START_HOUR, GAMEDAY_DAY_OF_WEEK);
 
     var parameters = buildJobParameters(gamedaySchedule, gamedayMessage);
     return parameters;
@@ -65,8 +66,16 @@ function formatMessageToGamedayGroup(message) {
     return `${gamedayGroup} ${message}`;
 }
 
-function formatCronJobSchedule(dayOfWeek) {
-    return `0 0 18 * * ${dayOfWeek}`;
+function buildScheduleRule(jobHour, jobDayOfWeek) {
+    let schedule_rule = new schedule.RecurrenceRule();
+    schedule_rule.tz = JOB_TIMEZONE;
+    schedule_rule.second = 0;
+    schedule_rule.minute = 0;
+    schedule_rule.hour = jobHour;
+    if (jobDayOfWeek) {
+        schedule_rule.dayOfWeek = jobDayOfWeek;
+    }
+    return schedule_rule;
 }
 
 function cancelAllJobs() {
