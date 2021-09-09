@@ -2,8 +2,8 @@ import schedule from 'node-schedule';
 import { messageEpicFreeGamesTweet } from "./twitter.js"
 
 // Day of the week that gameday is scheduled (Sunday = 0)
-const GAMEDAY_DAY_OF_WEEK = 4;
-const GAMEDAY_START_HOUR = 18;
+const GAMEDAY_DAY_OF_WEEK = 3;
+const GAMEDAY_START_HOUR = 19;
 const JOB_TIMEZONE = "America/Los_Angeles"
 
 var jobs = [];
