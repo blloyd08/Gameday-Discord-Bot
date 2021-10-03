@@ -41,7 +41,7 @@ function addMessageGamedayGroupJob(jobParameters, bot) {
 function getDayBeforeJobParameters() {
     var dayBeforeName = days[GAMEDAY_DAY_OF_WEEK];
     var dayBeforeSchedule = buildScheduleRule(GAMEDAY_START_HOUR, GAMEDAY_DAY_OF_WEEK - 1);
-    var dayBeforeMessage = `Gameday is tomorrow (${dayBeforeName}) 6 PM(PST)! :fire: :fire: :fire: `;
+    var dayBeforeMessage = `Gameday is tomorrow (${dayBeforeName}) 7 PM(PST)! :fire: :fire: :fire: `;
 
     var parameters = buildJobParameters(dayBeforeSchedule, dayBeforeMessage);
     return parameters
