@@ -1,0 +1,1 @@
+0 0 * * * root /usr/bin/find /var/log/discord-bot -name "*.log" -mtime +6 -type f -delete
