@@ -1,5 +1,7 @@
 node_modules
 
-auth.js
+/config/*auth.js
+/out/
+
 audioClips/
 tweet.txt
