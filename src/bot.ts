@@ -1,4 +1,4 @@
-import { Client, Collection, Intents } from 'discord.js';
+import { Client, ClientOptions, Collection, Intents } from 'discord.js';
 import { createLogger } from './logger';
 import { CommandContext, setClientSlashCommands, SlashCommand } from './util/slashCommands';
 import { initialize_audio_files } from './aws/startup';
@@ -7,33 +7,42 @@ import { AudioConfig } from './config/audioConfig';
 import { scheduleJobs } from './jobs';
 import { AppConfig, getAppConfig } from './config/appConfig';
 
+interface ConfigUpdater {
+    audioConfig?: (audioConfig: AudioConfig) => void;
+
+}
 
 export class BotClient extends Client {
     commands = new Collection<string, SlashCommand>();
-    update = updateClient;
+    update: ConfigUpdater;
+
+    // update = function (audioConfig: AudioConfig) => void;
+    constructor(update: ConfigUpdater) {
+        super({
+            intents: [
+                Intents.FLAGS.GUILDS,
+                Intents.FLAGS.GUILD_MEMBERS,
+                Intents.FLAGS.GUILD_MESSAGES,
+                Intents.FLAGS.GUILD_VOICE_STATES
+            ]
+        })
+        this.update = update;
+    }
 }
 
-export function createBotClient(): BotClient {
-    return new BotClient({
-        intents: [
-            Intents.FLAGS.GUILDS,
-            Intents.FLAGS.GUILD_MEMBERS,
-            Intents.FLAGS.GUILD_MESSAGES,
-            Intents.FLAGS.GUILD_VOICE_STATES
-        ]
-    });
-}
-
-let appConfig: AppConfig = getAppConfig();;
-const logger = createLogger('gameday-bot', appConfig);
-let audioConfig: AudioConfig;
-
-function updateClient(newAudioConfig: AudioConfig) {
-    audioConfig = newAudioConfig;
+export function createBotClient(update: ConfigUpdater): BotClient {
+    return new BotClient(update);
 }
 
 (async () => {
-    const client = createBotClient();
+    let appConfig: AppConfig = await getAppConfig();;
+    const logger = createLogger('gameday-bot', appConfig.logLevel);
+    let audioConfig: AudioConfig;
+
+    function updateClient(newAudioConfig: AudioConfig) {
+        audioConfig = newAudioConfig;
+    }
+    const client = createBotClient({audioConfig: updateClient});
 
     audioConfig = await initialize_audio_files(logger);
     const context: CommandContext = {audioConfig, logger, client};

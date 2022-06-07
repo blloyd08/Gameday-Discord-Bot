@@ -1,7 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import discord, { Collection, CommandInteraction, GuildMember, VoiceBasedChannel, Permissions } from 'discord.js';
-import { Logger } from 'winston';
-import { BotClient } from '../bot';
+import { Collection, CommandInteraction, GuildMember, VoiceBasedChannel, Permissions } from 'discord.js';
 import { CommandContext } from '../util/slashCommands';
 import { getGuildMemberFromInteraction, getVoiceChannelFromInteraction, getVoiceChannels } from '../util/util';
 import { playAudioClipByFilename } from './audio';

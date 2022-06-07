@@ -82,7 +82,8 @@ function listUsers(context: CommandContext, interaction: CommandInteraction) {
 function update(context: CommandContext, interaction: CommandInteraction) {
     initialize_audio_files(context.logger)
         .then(audioConfig => {
-            context.client.update(audioConfig);
+            if (context.client.update.audioConfig)
+                context.client.update.audioConfig(audioConfig);
         })
         .catch(err => {
             context.logger.error(`Update audio files failed: ${err}`);

@@ -5,16 +5,19 @@ import { initialize_audio_files } from "./aws/startup";
 import { createBotClient } from "./bot";
 
 
-const appConfig = getAppConfig();
-const logger = createLogger('deploy-slash-commands', appConfig);
+getAppConfig()
+    .then(appConfig => {
+        const logger = createLogger('deploy-slash-commands', appConfig.logLevel);
+        initialize_audio_files(logger)
+        .then(audioConfig => {
+            return readCommandFiles({audioConfig, logger, client: createBotClient({})})
+        })
+        .then(slashCommands => {
+            for (const guildId of appConfig.guilds) {
+                registerSlashCommands(logger, appConfig, guildId, slashCommands);
+            }
+        })
+        .catch(reason => logger.error(reason))
+        .finally(() => logger.info('Completed deploying commands.'));
+    });
 
-initialize_audio_files(logger).then(audioConfig => {
-    return readCommandFiles({audioConfig, logger, client: createBotClient()})
-})
-.then(slashCommands => {
-    for (const guildId of appConfig.guilds) {
-        registerSlashCommands(logger, appConfig, guildId, slashCommands);
-    }
-})
-.catch(reason => logger.error(reason))
-.finally(() => logger.info('Completed deploying commands.'));

@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "fs";
 import path from "path";
+import { createLogger } from "../logger";
 import { createDirectoryIfAbsent } from "../util/util";
+import { downloadFile, BUCKET } from '../aws/download';
 
 const CONFIG_FOLDER_PATH = path.join(__dirname, '..', 'config');
 export const APP_CONFIG_FILE_NAME = 'appConfig.json';
@@ -69,19 +71,31 @@ export class AppConfig {
     }
 }
 
-export function getAppConfig() {
-    console.log(`Reading app config from: ${APP_CONFIG_FILE_PATH}`)
-    if (existsSync(APP_CONFIG_FILE_PATH)) {
-        const appConfigJson: string = readFileSync(APP_CONFIG_FILE_PATH, {encoding:'utf8', flag:'r'}).toString();
-        const appConfig: AppConfig = AppConfig.fromSerialized(appConfigJson)
-        
-        if (!appConfig.auth) {
-            throw Error('No auth found in app config');
+
+export async function getAppConfig(): Promise<AppConfig> {
+    const logger = createLogger('app-config', 'info');
+    logger.info(`Reading app config from: ${APP_CONFIG_FILE_PATH}`);
+    const appConfigFilePath = getAppConfigFilePath();
+
+    // download json file
+    return downloadFile(logger, getAppConfigFilePath(), BUCKET, APP_CONFIG_FILE_NAME).then(() =>{
+        if (existsSync(APP_CONFIG_FILE_PATH)) {
+            const appConfigJson: string = readFileSync(APP_CONFIG_FILE_PATH, {encoding:'utf8', flag:'r'}).toString();
+            const appConfig: AppConfig = AppConfig.fromSerialized(appConfigJson)
+            
+            if (!appConfig.auth) {
+                throw Error('No auth found in app config');
+            }
+            
+            logger.info(`Finished loading app config. Log level: ${appConfig.logLevel} Client Id: ${appConfig.clientId}`)
+            return appConfig;
+        } else {
+            throw Error(`App config doesn't exist at ${APP_CONFIG_FILE_PATH}`);
         }
-        
-        console.log(`Finished loading app config. Log level: ${appConfig.logLevel} Client Id: ${appConfig.clientId}`)
-        return appConfig;
-    } else {
-        throw Error(`App config doesn't exist at ${APP_CONFIG_FILE_PATH}`);
-    }
+    }).catch(e =>{
+        logger.error("Error downloading app config", e);
+        throw Error(`Unable to download app config to ${appConfigFilePath} from ${BUCKET}`);
+    })
+
+
 }
