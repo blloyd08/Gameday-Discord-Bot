@@ -1,9 +1,9 @@
 import { createLogger as createWinstonLogger, format, transports, Logger } from "winston";
-import appConfig from './config/appConfig.json';
+import { AppConfig } from "./config/appConfig";
 
-export function createLogger(serviceName: string): Logger {
-    const logger = createWinstonLogger({
-        level: appConfig.logLevel ?? 'info',
+export function createLogger(serviceName: string, appConfig: AppConfig): Logger {
+  const logger = createWinstonLogger({
+        level: appConfig.logLevel,
         format: format.combine(
           format.timestamp({
             format: 'YYYY-MM-DD HH:mm:ss'

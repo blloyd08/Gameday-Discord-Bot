@@ -76,11 +76,10 @@ export default (context: CommandContext) => {
                                 await interaction.reply({content: `Failed to play intro clip`, ephemeral: true});
                             }
                         } else {
-                            const clipFileName = context.audioConfig.clips.get(clip);
-                            if (!clipFileName) {
+                            const clipFilePath = getAudioClipFilePath(clip);
+                            if (!clipFilePath) {
                                 throw Error(`Unable to find file path for clip: ${clip}`);
                             }
-                            const clipFilePath = getAudioClipFilePath(clipFileName);
                             playAudioClip(logger, voiceChannel, clipFilePath);
                             await interaction.reply({content: `Playing ${clip}`, ephemeral: true});
                         }
@@ -110,6 +109,11 @@ function playUserIntroClip(logger: Logger, audioConfig: AudioConfig, userId: str
         playAudioClip(logger, voiceChannel, userFilePath)
             .catch(err => { logger.error(err)});
     }
+}
+
+export function playAudioClipByFilename(logger: Logger, voiceChannel: VoiceBasedChannel, fileName: string) {
+    const clipFilePath = getAudioClipFilePath(fileName);
+    playAudioClip(logger, voiceChannel, clipFilePath);
 }
 
 function getUserAudioClipPath(logger: Logger, audioConfig: AudioConfig, userId: string) {

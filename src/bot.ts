@@ -1,21 +1,20 @@
 import { Client, Collection, Intents } from 'discord.js';
 import { createLogger } from './logger';
-import appConfig from './config/appConfig.json';
 import { CommandContext, setClientSlashCommands, SlashCommand } from './util/slashCommands';
 import { initialize_audio_files } from './aws/startup';
 import { handleUserJoinVoiceChannel } from './commands/audio';
 import { AudioConfig } from './config/audioConfig';
+import { scheduleJobs } from './jobs';
+import { AppConfig, getAppConfig } from './config/appConfig';
 
 
 export class BotClient extends Client {
     commands = new Collection<string, SlashCommand>();
+    update = updateClient;
 }
 
-const logger = createLogger('gameday-bot');
-let audioConfig: AudioConfig;
-
-(async () => {
-    const client = new BotClient({
+export function createBotClient(): BotClient {
+    return new BotClient({
         intents: [
             Intents.FLAGS.GUILDS,
             Intents.FLAGS.GUILD_MEMBERS,
@@ -23,14 +22,27 @@ let audioConfig: AudioConfig;
             Intents.FLAGS.GUILD_VOICE_STATES
         ]
     });
+}
+
+let appConfig: AppConfig = getAppConfig();;
+const logger = createLogger('gameday-bot', appConfig);
+let audioConfig: AudioConfig;
+
+function updateClient(newAudioConfig: AudioConfig) {
+    audioConfig = newAudioConfig;
+}
+
+(async () => {
+    const client = createBotClient();
 
     audioConfig = await initialize_audio_files(logger);
-    const context: CommandContext = {audioConfig, logger};
+    const context: CommandContext = {audioConfig, logger, client};
     await setClientSlashCommands(context, client);
 
     // Doc for client events https://discord.js.org/#/docs/discord.js/stable/class/Client
     client.on('ready', () => {
         logger.info(`Logged in to discord!`);
+        scheduleJobs(logger, appConfig, client);
     });
 
     client.on('interactionCreate', async interaction => {
@@ -40,7 +52,7 @@ let audioConfig: AudioConfig;
         if (!command) return;
 
         try {
-            await command.execute({audioConfig, logger}, interaction);
+            await command.execute({audioConfig, logger, client}, interaction);
         } catch (error) {
             logger.error(error);
             if (!interaction.replied) {
@@ -65,5 +77,5 @@ let audioConfig: AudioConfig;
         }
     })
 
-    client.login(appConfig.auth.discordToken);
+    client.login(appConfig.auth.discord);
 })();

@@ -1,15 +1,13 @@
 import { REST } from '@discordjs/rest';
 import { Logger } from 'winston';
 import { Routes } from 'discord-api-types/v9';
-import appConfig from '../config/appConfig.json';
 import { BotClient } from '../bot';
 import { readdirSync } from 'node:fs';
 import { join } from 'path';
 import { Interaction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { AudioConfig } from '../config/audioConfig';
-
-const rest = new REST({ version: '9' }).setToken(appConfig.auth.discordToken);
+import { AppConfig } from '../config/appConfig';
 
 export interface SlashCommand {
     builder: SlashCommandBuilder,
@@ -22,7 +20,8 @@ export interface CommandBuilder {
 
 export interface CommandContext {
     logger: Logger,
-    audioConfig: AudioConfig
+    audioConfig: AudioConfig,
+    client: BotClient
 }
 
 export async function readCommandFiles(context: CommandContext): Promise<SlashCommand[]> {
@@ -62,9 +61,10 @@ export async function setClientSlashCommands(context: CommandContext, client: Bo
     }
 }
 
-export async function registerSlashCommands(logger: Logger, guildId: string, commands: SlashCommand[]) {
+export async function registerSlashCommands(logger: Logger, appConfig: AppConfig, guildId: string, commands: SlashCommand[]) {
     try {
         logger.info('Starting to register %s application (/) commands. Guild ID: %s.', commands.length, guildId);
+        const rest = new REST({ version: '9' }).setToken(appConfig.auth.discord);
         await rest.put(
             Routes.applicationGuildCommands(appConfig.clientId, guildId),
             { body: commands.map(command => command.builder.toJSON()) },
