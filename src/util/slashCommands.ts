@@ -21,6 +21,7 @@ export interface CommandBuilder {
 export interface CommandContext {
     logger: Logger,
     audioConfig: AudioConfig,
+    appConfig: AppConfig,
     client: BotClient
 }
 

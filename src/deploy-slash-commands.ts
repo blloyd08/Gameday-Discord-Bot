@@ -10,7 +10,7 @@ getAppConfig()
         const logger = createLogger('deploy-slash-commands', appConfig.logLevel);
         initialize_audio_files(logger)
         .then(audioConfig => {
-            return readCommandFiles({audioConfig, logger, client: createBotClient({})})
+            return readCommandFiles({audioConfig, appConfig, logger, client: createBotClient({})})
         })
         .then(slashCommands => {
             for (const guildId of appConfig.guilds) {
@@ -19,5 +19,6 @@ getAppConfig()
         })
         .catch(reason => logger.error(reason))
         .finally(() => logger.info('Completed deploying commands.'));
-    });
+    }
+);
 

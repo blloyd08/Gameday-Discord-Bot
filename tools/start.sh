@@ -5,6 +5,7 @@
 # - Start the discord bot as a background task
 git pull --rebase > "/var/log/discord-bot/update-$(date +%FT%T).log"
 npm install
+npm run build
 
 # start the discord bot
 nohup npm run start&

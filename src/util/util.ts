@@ -31,7 +31,12 @@ export function getVoiceChannelFromInteraction(interaction: CommandInteraction):
   return guildMember.voice.channel;
 }
 
-export function getVoiceChannels(bot: BotClient): VoiceBasedChannel[]{
-  return bot.channels.cache.filter(channel => channel.isVoice())
-    .map(voiceChannel => voiceChannel as VoiceBasedChannel);
+export function getVoiceChannels(interaction: CommandInteraction): VoiceBasedChannel[]{
+  if (interaction.guild) {
+    const afkChannelId = interaction.guild.afkChannelId;
+    return interaction.guild.channels.cache
+      .filter(channel => channel.isVoice() && channel.id !== afkChannelId)
+      .map(voiceChannel => voiceChannel as VoiceBasedChannel);
+  }
+  return [];
 }

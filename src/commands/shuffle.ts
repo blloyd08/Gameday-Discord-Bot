@@ -55,7 +55,7 @@ export default (context: CommandContext) => {
                 return;
             }
 
-            var voiceChannels = getVoiceChannels(context.client);
+            var voiceChannels = getVoiceChannels(interaction);
             if (!voiceChannels.length) {
                 interaction.reply({content: "There must be at least 2 voice channels to use this command"});
                 return;

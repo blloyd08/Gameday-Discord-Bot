@@ -9,7 +9,6 @@ import { AppConfig, getAppConfig } from './config/appConfig';
 
 interface ConfigUpdater {
     audioConfig?: (audioConfig: AudioConfig) => void;
-
 }
 
 export class BotClient extends Client {
@@ -45,7 +44,7 @@ export function createBotClient(update: ConfigUpdater): BotClient {
     const client = createBotClient({audioConfig: updateClient});
 
     audioConfig = await initialize_audio_files(logger);
-    const context: CommandContext = {audioConfig, logger, client};
+    const context: CommandContext = {audioConfig, appConfig, logger, client};
     await setClientSlashCommands(context, client);
 
     // Doc for client events https://discord.js.org/#/docs/discord.js/stable/class/Client
@@ -61,7 +60,7 @@ export function createBotClient(update: ConfigUpdater): BotClient {
         if (!command) return;
 
         try {
-            await command.execute({audioConfig, logger, client}, interaction);
+            await command.execute({audioConfig, appConfig, logger, client}, interaction);
         } catch (error) {
             logger.error(error);
             if (!interaction.replied) {

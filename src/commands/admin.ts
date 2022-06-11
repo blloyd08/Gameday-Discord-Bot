@@ -1,6 +1,6 @@
 import { initialize_audio_files } from '../aws/startup.js';
 import { CommandInteraction, Permissions } from 'discord.js';
-import { CommandContext } from '../util/slashCommands.js';
+import { CommandContext, registerSlashCommands, setClientSlashCommands } from '../util/slashCommands.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { getGuildMemberFromInteraction } from '../util/util.js';
 
@@ -82,8 +82,20 @@ function listUsers(context: CommandContext, interaction: CommandInteraction) {
 function update(context: CommandContext, interaction: CommandInteraction) {
     initialize_audio_files(context.logger)
         .then(audioConfig => {
-            if (context.client.update.audioConfig)
+            if (context.client.update.audioConfig) {
                 context.client.update.audioConfig(audioConfig);
+                context = {
+                    audioConfig,
+                    appConfig: context.appConfig,
+                    logger: context.logger,
+                    client: context.client
+                };
+                setClientSlashCommands(context, context.client).then(() => {
+                    for (const guildId of context.appConfig.guilds) {
+                        registerSlashCommands(context.logger, context.appConfig, guildId, Array.from(context.client.commands.values()));
+                    }
+                })
+            }
         })
         .catch(err => {
             context.logger.error(`Update audio files failed: ${err}`);

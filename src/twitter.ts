@@ -28,7 +28,7 @@ export function messageEpicFreeGamesTweet(logger: Logger, appConfig: AppConfig, 
             if (pinnedTweet){
                 if (isFreeGamesTweet(logger, pinnedTweet.text) && updateTweetFile(logger, pinnedTweet.id)) {
                     var tweetLink = TWITTER_LINK_FORMAT + pinnedTweet.id;
-                    logger.info("Tweet Link:", tweetLink);
+                    logger.info(`Tweet Link: ${tweetLink}`);
                     sendTextMessageToAllGuilds(appConfig, bot, `${gamedayGroup} Check out this free game from Epic\n ${tweetLink}`);
                 }
             } else {
