@@ -11,7 +11,7 @@
     },
     "dependencies": {
         "@discordjs/builders": "^0.13.0",
-        "@discordjs/opus": "^0.3.3",
+        "@discordjs/opus": "^0.8.0",
         "@discordjs/rest": "^0.4.1",
         "@discordjs/voice": "^0.9.0",
         "@std/esm": "^0.26.0",
