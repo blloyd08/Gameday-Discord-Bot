@@ -38,15 +38,15 @@ export class AudioConfig {
 
         // JSON.parse does not properly parse into a Map object. Rebuild map.
         const usersMap = new Map<string, string>();
-        var usersArray = Object.keys(jsonObject['users']) as Array<keyof typeof jsonObject.users>;
+        const usersArray = Object.keys(jsonObject[INTRO_CLIPS_KEY]) as Array<keyof typeof jsonObject.users>;
         usersArray.forEach(userId => {
-            usersMap.set(userId.toString(), jsonObject['users'][userId].toString());
+            usersMap.set(userId.toString(), jsonObject[INTRO_CLIPS_KEY][userId].toString());
         })
 
         const clipsMap = new Map<string, string>();
-        var clipsArray = Object.keys(jsonObject['clips']) as Array<keyof typeof jsonObject.clips>;
+        const clipsArray = Object.keys(jsonObject[CLIPS_KEY]) as Array<keyof typeof jsonObject.clips>;
         clipsArray.forEach(clipName => {
-            clipsMap.set(clipName.toString(), jsonObject['clips'][clipName].toString());
+            clipsMap.set(clipName.toString(), jsonObject[CLIPS_KEY][clipName].toString());
         })
 
         return new AudioConfig(
