@@ -22,12 +22,12 @@ function getRequestOptions(appConfig: AppConfig): AxiosRequestConfig {
 export function messageEpicFreeGamesTweet(logger: Logger, appConfig: AppConfig, bot: BotClient, gamedayGroup: string) {
     axios.get(EPIC_GAMES_REQUEST_URL, getRequestOptions(appConfig))
         .then(response => {
-            var pinnedTweet = getPinnedTweet(response);
+            const pinnedTweet = getPinnedTweet(response);
             logger.info("Pinned Tweet:", pinnedTweet);
 
             if (pinnedTweet){
                 if (isFreeGamesTweet(logger, pinnedTweet.text) && updateTweetFile(logger, pinnedTweet.id)) {
-                    var tweetLink = TWITTER_LINK_FORMAT + pinnedTweet.id;
+                    const tweetLink = TWITTER_LINK_FORMAT + pinnedTweet.id;
                     logger.info(`Tweet Link: ${tweetLink}`);
                     sendTextMessageToAllGuilds(appConfig, bot, `${gamedayGroup} Check out this free game from Epic\n ${tweetLink}`);
                 }
@@ -41,15 +41,15 @@ export function messageEpicFreeGamesTweet(logger: Logger, appConfig: AppConfig, 
 
 function getPinnedTweet(response: AxiosResponse){
     response.data.includes.tweets[0].text;
-    var pinnedTweet = response && response.data && response.data.includes && response.data.includes.tweets && response.data.includes.tweets[0];
+    const pinnedTweet = response && response.data && response.data.includes && response.data.includes.tweets && response.data.includes.tweets[0];
     
     // Will be null if response didn't have pinned tweet
     return pinnedTweet;
 }
 
 function isFreeGamesTweet(logger: Logger, tweetText: string) {
-    var lowerTweetText = tweetText.toLowerCase();
-    var isFreeGame = lowerTweetText.includes(" free ");
+    const lowerTweetText = tweetText.toLowerCase();
+    const isFreeGame = lowerTweetText.includes(" free ");
         
     if (!isFreeGame) {
         logger.error("Tweet text doesn't look like a free game");

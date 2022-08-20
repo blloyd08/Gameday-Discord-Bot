@@ -1,7 +1,6 @@
 import { initialize_audio_files } from '../aws/startup.js';
-import { CommandInteraction, Permissions } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits } from 'discord.js';
 import { CommandContext, registerSlashCommands, setClientSlashCommands } from '../util/slashCommands.js';
-import { SlashCommandBuilder } from '@discordjs/builders';
 import { getGuildMemberFromInteraction } from '../util/util.js';
 
 enum Subcommands {
@@ -37,8 +36,10 @@ export default (context: CommandContext) => {
                         )
                 ),
         async execute(context: CommandContext, interaction: CommandInteraction) {
-            var guildMember = getGuildMemberFromInteraction(interaction);
-            if (!guildMember.permissions.has(Permissions.FLAGS.ADMINISTRATOR)) {
+            if (!interaction.isChatInputCommand()) return;
+            
+            const guildMember = getGuildMemberFromInteraction(interaction);
+            if (!guildMember.permissions.has(PermissionFlagsBits.Administrator)) {
                 interaction.reply({content: "You do not have permissions to run this command", ephemeral: true})
             }
             switch(interaction.options.getSubcommand()) {
@@ -65,15 +66,15 @@ function listUsers(context: CommandContext, interaction: CommandInteraction) {
     }
 
     interaction.guild.members.fetch()
-        .then(members => {
-            var membersText: string[] = [];
+        .then((members) => {
+            const membersText: string[] = [];
             members.forEach(member => {
                 membersText.push(`${member.user.username},${member.user.id}`);
                 context.logger.info(`${member.user.username}(${member.user.id})`);
             });
             interaction.reply({content: membersText.join("\n"), ephemeral: true})
         })
-        .catch(err =>{
+        .catch((err) =>{
             context.logger.error("Failed to send list of all users:", err);
             interaction.reply({content: "Failed to send list of all users", ephemeral: false})
         })

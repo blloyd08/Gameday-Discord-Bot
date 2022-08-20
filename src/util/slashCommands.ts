@@ -1,11 +1,10 @@
 import { REST } from '@discordjs/rest';
 import { Logger } from 'winston';
-import { Routes } from 'discord-api-types/v9';
+import { Routes } from 'discord-api-types/v10';
 import { BotClient } from '../bot';
 import { readdirSync } from 'node:fs';
 import { join } from 'path';
-import { Interaction } from 'discord.js';
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { Interaction, SlashCommandBuilder } from 'discord.js';
 import { AudioConfig } from '../config/audioConfig';
 import { AppConfig } from '../config/appConfig';
 

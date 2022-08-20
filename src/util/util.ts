@@ -1,7 +1,7 @@
 import { AppConfig } from '../config/appConfig';
 import { existsSync, mkdirSync } from 'fs';
 import { BotClient } from '../bot';
-import { CommandInteraction, GuildMember, TextChannel, VoiceBasedChannel } from 'discord.js';
+import { ChannelType, CommandInteraction, GuildMember, TextChannel, VoiceBasedChannel } from 'discord.js';
 
 export function createDirectoryIfAbsent(directory: string) {
   if (!existsSync(directory)) {
@@ -11,7 +11,7 @@ export function createDirectoryIfAbsent(directory: string) {
 
 export function sendTextMessageToAllGuilds(appConfig: AppConfig, bot: BotClient, message: string) {
   appConfig.guilds.forEach( guildId => {
-    var textChannel = bot.guilds.cache.get(guildId)?.channels.cache.filter(channel => channel.isText()).first();
+    const textChannel = bot.guilds.cache.get(guildId)?.channels.cache.filter(channel => channel.type == ChannelType.GuildText).first();
     if (textChannel) {
         (textChannel as TextChannel).send(message)
     }
@@ -35,7 +35,7 @@ export function getVoiceChannels(interaction: CommandInteraction): VoiceBasedCha
   if (interaction.guild) {
     const afkChannelId = interaction.guild.afkChannelId;
     return interaction.guild.channels.cache
-      .filter(channel => channel.isVoice() && channel.id !== afkChannelId)
+      .filter(channel => channel.type == ChannelType.GuildVoice && channel.id !== afkChannelId)
       .map(voiceChannel => voiceChannel as VoiceBasedChannel);
   }
   return [];

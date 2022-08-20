@@ -1,4 +1,4 @@
-import { Client, ClientOptions, Collection, Intents } from 'discord.js';
+import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { createLogger } from './logger';
 import { CommandContext, setClientSlashCommands, SlashCommand } from './util/slashCommands';
 import { initialize_audio_files } from './aws/startup';
@@ -19,10 +19,10 @@ export class BotClient extends Client {
     constructor(update: ConfigUpdater) {
         super({
             intents: [
-                Intents.FLAGS.GUILDS,
-                Intents.FLAGS.GUILD_MEMBERS,
-                Intents.FLAGS.GUILD_MESSAGES,
-                Intents.FLAGS.GUILD_VOICE_STATES
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildMembers,
+                GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.GuildVoiceStates
             ]
         })
         this.update = update;
@@ -34,7 +34,7 @@ export function createBotClient(update: ConfigUpdater): BotClient {
 }
 
 (async () => {
-    let appConfig: AppConfig = await getAppConfig();;
+    const appConfig: AppConfig = await getAppConfig();
     const logger = createLogger('gameday-bot', appConfig.logLevel);
     let audioConfig: AudioConfig;
 
