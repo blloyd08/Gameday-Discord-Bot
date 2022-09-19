@@ -36,54 +36,81 @@ export function createBotClient(update: ConfigUpdater): BotClient {
 (async () => {
     const appConfig: AppConfig = await getAppConfig();
     const logger = createLogger('gameday-bot', appConfig.logLevel);
+
     let audioConfig: AudioConfig;
 
     function updateClient(newAudioConfig: AudioConfig) {
         audioConfig = newAudioConfig;
     }
-    const client = createBotClient({audioConfig: updateClient});
 
-    audioConfig = await initialize_audio_files(logger);
-    const context: CommandContext = {audioConfig, appConfig, logger, client};
-    await setClientSlashCommands(context, client);
+    try {
 
-    // Doc for client events https://discord.js.org/#/docs/discord.js/stable/class/Client
-    client.on('ready', () => {
-        logger.info(`Logged in to discord!`);
-        scheduleJobs(logger, appConfig, client);
-    });
+        const client = createBotClient({audioConfig: updateClient});
 
-    client.on('interactionCreate', async interaction => {
-        if (!interaction.isCommand()) return;
+        audioConfig = await initialize_audio_files(logger);
+        const context: CommandContext = {audioConfig, appConfig, logger, client};
+        await setClientSlashCommands(context, client);
 
-        const command = client.commands.get(interaction.commandName);
-        if (!command) return;
+        // Doc for client events https://discord.js.org/#/docs/discord.js/stable/class/Client
+        client.on('ready', () => {
+            logger.info(`Logged in to discord!`);
+            scheduleJobs(logger, appConfig, client);
+        });
 
-        try {
-            await command.execute({audioConfig, appConfig, logger, client}, interaction);
-        } catch (error) {
-            logger.error(error);
-            if (!interaction.replied) {
-                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-            }
-        }
+        client.on('interactionCreate', async interaction => {
+            if (!interaction.isCommand()) return;
 
-    });
+            const command = client.commands.get(interaction.commandName);
+            if (!command) return;
 
-    client.on('voiceStateUpdate', async (oldVoiceState, newVoiceState) => {
-        try {
-            if (!newVoiceState.member?.user.bot) {
-                if (!newVoiceState.channel) {
-                    logger.info(`USER ${newVoiceState.member?.user.username} (${newVoiceState.member?.user.id}) LEFT VOICE CHANNEL`)
-                } else if (!oldVoiceState.channel){
-                    logger.info(`USER ${newVoiceState.member?.user.username}(${newVoiceState.member?.user.id}) HAS JOINED VOICE CHANNEL`)
-                    handleUserJoinVoiceChannel(logger, audioConfig, newVoiceState);
+            try {
+                await command.execute({audioConfig, appConfig, logger, client}, interaction);
+            } catch (error) {
+                logger.error(error);
+                if (!interaction.replied) {
+                    await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
                 }
             }
-        } catch (error) {
-            logger.error(error);
-        }
-    })
 
-    client.login(appConfig.auth.discord);
+        });
+
+        client.on('voiceStateUpdate', async (oldVoiceState, newVoiceState) => {
+            try {
+                if (!newVoiceState.member?.user.bot) {
+                    if (!newVoiceState.channel) {
+                        logger.info(`USER ${newVoiceState.member?.user.username} (${newVoiceState.member?.user.id}) LEFT VOICE CHANNEL`)
+                    } else if (!oldVoiceState.channel){
+                        logger.info(`USER ${newVoiceState.member?.user.username}(${newVoiceState.member?.user.id}) HAS JOINED VOICE CHANNEL`)
+                        handleUserJoinVoiceChannel(logger, audioConfig, newVoiceState);
+                    }
+                }
+            } catch (error) {
+                logger.error(error);
+            }
+        });
+
+        client.on('error', (error) => {
+            logger.error('Client error encountered');
+            logger.error(error);
+        })
+
+        client.on('shardError', error => {
+            logger.error('A websocket connection encountered an error');
+            logger.error(error);
+        });
+
+        client.on('shardDisconnect', (event, shardId) => {
+            logger.error(`Shard disconnected: (${shardId}) ${event}`);
+        });
+
+        client.on('shardReconnecting', (shardId) => {
+            logger.error(`Shard Reconnecting: ${shardId}`);
+        });
+
+        client.login(appConfig.auth.discord);
+    } catch (e) {
+        logger.error("Top level error handler caught an error");
+        logger.error(e);
+        throw(e);
+    }
 })();
