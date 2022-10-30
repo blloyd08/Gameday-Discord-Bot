@@ -8,6 +8,5 @@ npm install
 npm run build
 
 # start the discord bot
-nohup npm run start&
-sleep 5
-pgrep node > /var/log/discord-bot/pid.txt
+npm install pm2@latest -g
+pm2 start ./out/bot.js
