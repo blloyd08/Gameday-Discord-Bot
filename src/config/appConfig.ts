@@ -19,8 +19,7 @@ export function getConfigFilePath(fileName: string) {
 
 class Auth {
     constructor(
-        public readonly discord: string,
-        public readonly twitter: string
+        public readonly discord: string
     ) {}
 }
 
@@ -51,8 +50,7 @@ export class AppConfig {
         const jsonObject: AppConfig = JSON.parse(serialized);
 
         const auth: Auth = new Auth(
-            jsonObject["auth"]["discord"],
-            jsonObject["auth"]["twitter"]
+            jsonObject["auth"]["discord"]
         )
 
         const gamedayJob: GamedayJob = new GamedayJob(

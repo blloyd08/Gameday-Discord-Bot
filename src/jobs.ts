@@ -2,7 +2,6 @@ import schedule from 'node-schedule';
 import { Logger } from 'winston';
 import { BotClient } from './bot.js';
 import { AppConfig } from './config/appConfig';
-import { messageEpicFreeGamesTweet } from "./twitter"
 import { sendTextMessageToAllGuilds } from './util/util.js';
 
 // Day of the week that gameday is scheduled (Sunday = 0)
@@ -26,13 +25,6 @@ export function scheduleJobs(logger: Logger, appConfig: AppConfig, bot: BotClien
     const dayBeforeJobParameters = getDayBeforeJobParameters(appConfig);
     // Notify users that gameday has started
     const gamedayJobParameters = getGamedayJobParameters(appConfig);
-
-    // Check for tweet about new Epic free games and share tweet
-    messageEpicFreeGamesTweet(logger, appConfig, bot, gamedayGroup);
-    const epic_job_schedule = buildScheduleRule(appConfig.jobs.gameday.startHour -1, appConfig.jobs.gameday.dayOfWeek);
-    jobs.push(schedule.scheduleJob(epic_job_schedule, function () {
-        messageEpicFreeGamesTweet(logger, appConfig, bot, gamedayGroup);
-    }));
 
     addMessageGamedayGroupJob(logger, appConfig, bot, dayBeforeJobParameters);
     addMessageGamedayGroupJob(logger, appConfig, bot, gamedayJobParameters);
