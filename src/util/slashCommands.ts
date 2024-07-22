@@ -1,4 +1,4 @@
-import { REST } from '@discordjs/rest';
+import { REST } from 'discord.js';
 import { Logger } from 'winston';
 import { Routes } from 'discord-api-types/v10';
 import { BotClient } from '../bot';

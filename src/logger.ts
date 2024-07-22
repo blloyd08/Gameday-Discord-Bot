@@ -1,4 +1,5 @@
 import { createLogger as createWinstonLogger, format, transports, Logger } from "winston";
+import DailyRotateFile from 'winston-daily-rotate-file';
 
 export function createLogger(serviceName: string, logLevel: string): Logger {
   const logger = createWinstonLogger({
@@ -13,8 +14,22 @@ export function createLogger(serviceName: string, logLevel: string): Logger {
         ),
         defaultMeta: { service: serviceName },
         transports: [
-          new transports.File({ filename: './out/bot-error.log', level: 'error' }),
-          new transports.File({ filename: './out/bot-combined.log' })
+          new DailyRotateFile({
+            level: 'error',
+            filename: 'bot-error-%DATE%.log',
+            datePattern: 'YYYY-MM-DD-HH',
+            zippedArchive: true,
+            maxSize: '20m',
+            maxFiles: '14d'
+          }),
+          new DailyRotateFile({
+            level: 'error',
+            filename: 'bot-combined-%DATE%.log',
+            datePattern: 'YYYY-MM-DD-HH',
+            zippedArchive: true,
+            maxSize: '20m',
+            maxFiles: '14d'
+          }),
         ]
     });
     

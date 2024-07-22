@@ -1,11 +1,11 @@
 import fs from 'fs';
-import { downloadFile, BUCKET } from './download';
+import { downloadFile, BUCKET, DataType } from './download';
 import { Logger } from 'winston';
 import { AudioConfig, AUDIO_MANIFEST_FILE_NAME, getAudioClipFilePath, getAudioConfig, getAudioManifestFilePath } from '../config/audioConfig';
 
 export async function initialize_audio_files(logger: Logger): Promise<AudioConfig> {
   // download json file
-  return downloadFile(logger, getAudioManifestFilePath(), BUCKET, AUDIO_MANIFEST_FILE_NAME).then(() =>{
+  return downloadFile(logger, getAudioManifestFilePath(), BUCKET, AUDIO_MANIFEST_FILE_NAME, DataType.Text).then(() =>{
     const audioConfig: AudioConfig = getAudioConfig(logger);
     return audioConfig
   }).then((audioConfig) =>{
@@ -22,10 +22,10 @@ export async function initialize_audio_files(logger: Logger): Promise<AudioConfi
 
 function downloadMissingFiles(logger: Logger, fileNames: string[]){
   fileNames.forEach(fileName => {
-    let filePath = getAudioClipFilePath(fileName);
+    const filePath = getAudioClipFilePath(fileName);
     if (!fs.existsSync(filePath)){
-      let s3Key = `clips/${fileName}`
-      downloadFile(logger, filePath, BUCKET, s3Key)
+      const s3Key = `clips/${fileName}`;
+      downloadFile(logger, filePath, BUCKET, s3Key, DataType.Data);
     }
 
   })

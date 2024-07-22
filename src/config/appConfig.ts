@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { createLogger } from "../logger";
 import { createDirectoryIfAbsent } from "../util/util";
-import { downloadFile, BUCKET } from '../aws/download';
+import { downloadFile, BUCKET, DataType } from '../aws/download';
 
 const CONFIG_FOLDER_PATH = path.join(__dirname, '..', 'config');
 export const APP_CONFIG_FILE_NAME = 'appConfig.json';
@@ -76,7 +76,7 @@ export async function getAppConfig(): Promise<AppConfig> {
     const appConfigFilePath = getAppConfigFilePath();
 
     // download json file
-    return downloadFile(logger, getAppConfigFilePath(), BUCKET, APP_CONFIG_FILE_NAME).then(() =>{
+    return downloadFile(logger, getAppConfigFilePath(), BUCKET, APP_CONFIG_FILE_NAME, DataType.Text).then(() =>{
         if (existsSync(APP_CONFIG_FILE_PATH)) {
             const appConfigJson: string = readFileSync(APP_CONFIG_FILE_PATH, {encoding:'utf8', flag:'r'}).toString();
             const appConfig: AppConfig = AppConfig.fromSerialized(appConfigJson)
