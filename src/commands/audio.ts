@@ -121,7 +121,11 @@ async function playAudioClip(logger: Logger, voiceChannel: VoiceBasedChannel, fi
 }
 
 function playClip(logger: Logger, clipFilePath: string){
-    const resource = createAudioResource(clipFilePath, {inputType: StreamType.Arbitrary});
+    const resource = createAudioResource(clipFilePath, {
+        inputType: StreamType.Arbitrary,
+        inlineVolume: true
+    });
+    resource.volume?.setVolume(0.6);
     logger.info(`Starting to play clip: ${clipFilePath}`)
     player.play(resource);
     return entersState(player, AudioPlayerStatus.Playing, 5e3);
