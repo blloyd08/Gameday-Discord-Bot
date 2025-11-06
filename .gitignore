@@ -6,4 +6,5 @@ node_modules
 audioClips/
 tweet.txt
 *.log
+*.log.gz
 .*.json

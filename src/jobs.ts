@@ -1,14 +1,14 @@
 import schedule from 'node-schedule';
-import { Logger } from 'winston';
-import { BotClient } from './bot.js';
-import { AppConfig } from './config/appConfig';
+import type { Logger } from 'winston';
+import type { BotClient } from './bot.js';
+import type { AppConfig } from './config/appConfig';
 import { sendTextMessageToAllGuilds } from './util/util.js';
 
 // Day of the week that gameday is scheduled (Sunday = 0)
-const JOB_TIMEZONE = "America/Los_Angeles"
+const JOB_TIMEZONE = 'America/Los_Angeles';
 
 const jobs: schedule.Job[] = [];
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const gamedayGroup = '<@&314584437751021575>';
 
 interface JobParameters {
@@ -16,7 +16,7 @@ interface JobParameters {
     message: string
 }
 
-export function scheduleJobs(logger: Logger, appConfig: AppConfig, bot: BotClient) {
+export function scheduleJobs(logger: Logger, appConfig: AppConfig, bot: BotClient): void {
 
     // Cancel jobs previously setup. This can happen if the bot disconnects and reconnects.
     cancelAllJobs(logger);
@@ -30,8 +30,8 @@ export function scheduleJobs(logger: Logger, appConfig: AppConfig, bot: BotClien
     addMessageGamedayGroupJob(logger, appConfig, bot, gamedayJobParameters);
 }
 
-function addMessageGamedayGroupJob(logger: Logger, appConfig: AppConfig, bot: BotClient, jobParameters: JobParameters) {
-    logger.info("Adding job with parameters:", jobParameters);
+function addMessageGamedayGroupJob(logger: Logger, appConfig: AppConfig, bot: BotClient, jobParameters: JobParameters): void {
+    logger.info('Adding job with parameters:', jobParameters);
     jobs.push(schedule.scheduleJob(jobParameters.schedule, function () {
         sendTextMessageToAllGuilds(appConfig, bot, jobParameters.message);
     }));
@@ -43,11 +43,11 @@ function getDayBeforeJobParameters(appConfig: AppConfig): JobParameters {
     const dayBeforeMessage = `Gameday is tomorrow (${dayBeforeName}) 7 PM(PST)! :fire: :fire: :fire: `;
 
     const parameters = buildJobParameters(dayBeforeSchedule, dayBeforeMessage);
-    return parameters
+    return parameters;
 }
 
-function getGamedayJobParameters(appConfig: AppConfig) {
-    const gamedayMessage = formatMessageToGamedayGroup("It's MothaFukinGameDay time! Lets go!!! ");
+function getGamedayJobParameters(appConfig: AppConfig): JobParameters {
+    const gamedayMessage = formatMessageToGamedayGroup('It\'s MothaFukinGameDay time! Lets go!!! ');
     const gamedaySchedule = buildScheduleRule(appConfig.jobs.gameday.startHour, appConfig.jobs.gameday.dayOfWeek);
 
     const parameters = buildJobParameters(gamedaySchedule, gamedayMessage);
@@ -58,11 +58,11 @@ function getGamedayJobParameters(appConfig: AppConfig) {
 function buildJobParameters(cronsSchedule: schedule.RecurrenceRule, groupMessage: string): JobParameters {
     return {
         schedule: cronsSchedule,
-        message: groupMessage
-    }
+        message: groupMessage,
+    };
 }
 
-function formatMessageToGamedayGroup(message: string) {
+function formatMessageToGamedayGroup(message: string): string {
     return `${gamedayGroup} ${message}`;
 }
 
@@ -78,9 +78,9 @@ function buildScheduleRule(jobHour: number, jobDayOfWeek: number): schedule.Recu
     return schedule_rule;
 }
 
-function cancelAllJobs(logger: Logger) {
+function cancelAllJobs(logger: Logger): void {
     if (jobs.length > 0) {
-        logger.info("Cancelling all scheduled jobs")
+        logger.info('Cancelling all scheduled jobs');
         jobs.forEach((job) => {
             schedule.cancelJob(job);
         });

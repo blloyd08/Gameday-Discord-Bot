@@ -1,4 +1,5 @@
-import { createLogger as createWinstonLogger, format, transports, Logger } from "winston";
+import type { Logger } from 'winston';
+import { createLogger as createWinstonLogger, format, transports } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
 export function createLogger(serviceName: string, logLevel: string): Logger {
@@ -6,11 +7,11 @@ export function createLogger(serviceName: string, logLevel: string): Logger {
         level: logLevel,
         format: format.combine(
           format.timestamp({
-            format: 'YYYY-MM-DD HH:mm:ss'
+            format: 'YYYY-MM-DD HH:mm:ss',
           }),
           format.errors({ stack: true }),
           format.splat(),
-          format.json()
+          format.json(),
         ),
         defaultMeta: { service: serviceName },
         transports: [
@@ -20,7 +21,7 @@ export function createLogger(serviceName: string, logLevel: string): Logger {
             datePattern: 'YYYY-MM-DD-HH',
             zippedArchive: true,
             maxSize: '20m',
-            maxFiles: '14d'
+            maxFiles: '14d',
           }),
           new DailyRotateFile({
             level: 'error',
@@ -28,9 +29,9 @@ export function createLogger(serviceName: string, logLevel: string): Logger {
             datePattern: 'YYYY-MM-DD-HH',
             zippedArchive: true,
             maxSize: '20m',
-            maxFiles: '14d'
+            maxFiles: '14d',
           }),
-        ]
+        ],
     });
     
     //
@@ -41,8 +42,8 @@ export function createLogger(serviceName: string, logLevel: string): Logger {
         logger.add(new transports.Console({
           format: format.combine(
             format.colorize(),
-            format.simple()
-          )
+            format.simple(),
+          ),
         }));
     }
     return logger;

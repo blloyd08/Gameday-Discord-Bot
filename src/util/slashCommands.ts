@@ -1,12 +1,13 @@
 import { REST } from 'discord.js';
-import { Logger } from 'winston';
+import type { Logger } from 'winston';
 import { Routes } from 'discord-api-types/v10';
-import { BotClient } from '../bot';
+import type { BotClient } from '../bot';
 import { readdirSync } from 'node:fs';
 import { join } from 'path';
-import { Interaction, SlashCommandBuilder } from 'discord.js';
-import { AudioConfig } from '../config/audioConfig';
-import { AppConfig } from '../config/appConfig';
+import type { Interaction, SlashCommandBuilder } from 'discord.js';
+import type { AudioConfig } from '../config/audioConfig';
+import type { AppConfig } from '../config/appConfig';
+import type { BotAudioPlayer } from '../commands/audio';
 
 export interface SlashCommand {
     builder: SlashCommandBuilder,
@@ -21,7 +22,8 @@ export interface CommandContext {
     logger: Logger,
     audioConfig: AudioConfig,
     appConfig: AppConfig,
-    client: BotClient
+    client: BotClient,
+    botAudioPlayer: BotAudioPlayer
 }
 
 export async function readCommandFiles(context: CommandContext): Promise<SlashCommand[]> {
@@ -36,6 +38,7 @@ export async function readCommandFiles(context: CommandContext): Promise<SlashCo
         for (const file of commandFiles) {
             const filePath = join(commandFolderPath, file);
             logger.info('Importing %s from %s', file, filePath);
+            // eslint-disable-next-line no-await-in-loop
             const commandBuilder = (await import(join(filePath))).default;
             const command = commandBuilder(context);
             if (command && command.builder && command.builder.name) {
@@ -54,14 +57,14 @@ export async function readCommandFiles(context: CommandContext): Promise<SlashCo
     }
 }
 
-export async function setClientSlashCommands(context: CommandContext, client: BotClient) {
+export async function setClientSlashCommands(context: CommandContext, client: BotClient): Promise<void> {
     const slashCommands = await readCommandFiles(context);
     for (const command of slashCommands) {
         client.commands.set(command.builder.name, command);
     }
 }
 
-export async function registerSlashCommands(logger: Logger, appConfig: AppConfig, guildId: string, commands: SlashCommand[]) {
+export async function registerSlashCommands(logger: Logger, appConfig: AppConfig, guildId: string, commands: SlashCommand[]): Promise<void> {
     try {
         logger.info('Starting to register %s application (/) commands. Guild ID: %s.', commands.length, guildId);
         const rest = new REST({ version: '9' }).setToken(appConfig.auth.discord);

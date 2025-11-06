@@ -1,6 +1,8 @@
 import { initialize_audio_files } from '../aws/startup.js';
-import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits } from 'discord.js';
-import { CommandContext, registerSlashCommands, setClientSlashCommands } from '../util/slashCommands.js';
+import type { CommandInteraction} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import type { CommandContext} from '../util/slashCommands.js';
+import { registerSlashCommands, setClientSlashCommands } from '../util/slashCommands.js';
 import { getGuildMemberFromInteraction } from '../util/util.js';
 
 enum Subcommands {
@@ -8,9 +10,10 @@ enum Subcommands {
     Update = 'update'
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default (context: CommandContext) => {
     const logger = context.logger;
-    logger.info("Building admin command.")
+    logger.info('Building admin command.');
 
     return {
         builder: new SlashCommandBuilder()
@@ -19,28 +22,28 @@ export default (context: CommandContext) => {
                 .addSubcommand(subcommand => 
                     subcommand
                         .setName(Subcommands.List)
-                        .setDescription("List all user IDs")
+                        .setDescription('List all user IDs'),
                 )
                 .addSubcommand(subcommand => 
                     subcommand
                         .setName(Subcommands.Update)
-                        .setDescription("Update configuration")
+                        .setDescription('Update configuration')
                         .addStringOption(option =>
                             option.setName('config')
                                 .setDescription('Configuration to update')
                                 .setRequired(true)
                                 .addChoices(
                                     {name:'app', value:'app'},
-                                    {name:'audio', value:'audio'}
-                                )
-                        )
+                                    {name:'audio', value:'audio'},
+                                ),
+                        ),
                 ),
-        async execute(context: CommandContext, interaction: CommandInteraction) {
-            if (!interaction.isChatInputCommand()) return;
+        async execute(context: CommandContext, interaction: CommandInteraction): Promise<void> {
+            if (!interaction.isChatInputCommand()) {return;}
             
             const guildMember = getGuildMemberFromInteraction(interaction);
             if (!guildMember.permissions.has(PermissionFlagsBits.Administrator)) {
-                interaction.reply({content: "You do not have permissions to run this command", ephemeral: true})
+                interaction.reply({content: 'You do not have permissions to run this command', ephemeral: true});
             }
             switch(interaction.options.getSubcommand()) {
                 case Subcommands.List: {
@@ -55,13 +58,13 @@ export default (context: CommandContext) => {
                     await interaction.reply({content: 'Not a valid command', ephemeral: true});
                 }
             }
-        }
-    }
-}
+        },
+    };
+};
 
-function listUsers(context: CommandContext, interaction: CommandInteraction) {
+function listUsers(context: CommandContext, interaction: CommandInteraction): void {
     if (!interaction.guild) {
-        interaction.reply({content: "Must be in a server to use this command"})
+        interaction.reply({content: 'Must be in a server to use this command'});
         return;
     }
 
@@ -72,15 +75,15 @@ function listUsers(context: CommandContext, interaction: CommandInteraction) {
                 membersText.push(`${member.user.username},${member.user.id}`);
                 context.logger.info(`${member.user.username}(${member.user.id})`);
             });
-            interaction.reply({content: membersText.join("\n"), ephemeral: true})
+            interaction.reply({content: membersText.join('\n'), ephemeral: true});
         })
         .catch((err) =>{
-            context.logger.error("Failed to send list of all users:", err);
-            interaction.reply({content: "Failed to send list of all users", ephemeral: false})
-        })
+            context.logger.error('Failed to send list of all users:', err);
+            interaction.reply({content: 'Failed to send list of all users', ephemeral: false});
+        });
 }
 
-function update(context: CommandContext, interaction: CommandInteraction) {
+function update(context: CommandContext, interaction: CommandInteraction): void {
     initialize_audio_files(context.logger)
         .then(audioConfig => {
             if (context.client.update.audioConfig) {
@@ -89,13 +92,14 @@ function update(context: CommandContext, interaction: CommandInteraction) {
                     audioConfig,
                     appConfig: context.appConfig,
                     logger: context.logger,
-                    client: context.client
+                    client: context.client,
+                    botAudioPlayer: context.botAudioPlayer,
                 };
                 setClientSlashCommands(context, context.client).then(() => {
                     for (const guildId of context.appConfig.guilds) {
                         registerSlashCommands(context.logger, context.appConfig, guildId, Array.from(context.client.commands.values()));
                     }
-                })
+                });
             }
         })
         .catch(err => {
@@ -103,5 +107,5 @@ function update(context: CommandContext, interaction: CommandInteraction) {
             interaction.reply({content: `Update audio files failed: ${err}`, ephemeral: true});
             return;
         });
-    interaction.reply({content: `Audio files have been updated`, ephemeral: true});
+    interaction.reply({content: 'Audio files have been updated', ephemeral: true});
 }

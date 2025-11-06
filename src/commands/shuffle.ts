@@ -1,6 +1,7 @@
-import { SlashCommandBuilder, Collection, CommandInteraction, GuildMember, VoiceBasedChannel, PermissionFlagsBits } from 'discord.js';
-import { CommandContext } from '../util/slashCommands';
-import { getGuildMemberFromInteraction, getVoiceChannelFromInteraction, getVoiceChannels } from '../util/util';
+import type { CommandInteraction, GuildMember, VoiceBasedChannel} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import type { CommandContext } from '../util/slashCommands';
+import { getGuildMemberFromInteraction, getVoiceChannelFromInteraction, getVoiceChannelMembers, getVoiceChannels } from '../util/util';
 import { playAudioClipByFilename } from './audio';
 
 enum Subcommands {
@@ -14,9 +15,10 @@ interface ShuffledTeams {
     team2: GuildMember[]
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default (context: CommandContext) => {
     const logger = context.logger;
-    logger.info("Building shuffle command.")
+    logger.info('Building shuffle command.');
 
     return {
         builder: new SlashCommandBuilder()
@@ -25,46 +27,46 @@ export default (context: CommandContext) => {
                 .addSubcommand(subcommand => 
                     subcommand
                         .setName(Subcommands.Generate)
-                        .setDescription("Shuffle Members and print results")
+                        .setDescription('Shuffle Members and print results'),
                 )
                 .addSubcommand(subcommand => 
                     subcommand
                         .setName(Subcommands.Move)
-                        .setDescription("Move members into separate channels")
+                        .setDescription('Move members into separate channels'),
                 )
                 .addSubcommand(subcommand => 
                     subcommand
                         .setName(Subcommands.Reset)
-                        .setDescription("Move shuffled member's back into their own channel")
+                        .setDescription('Move shuffled member\'s back into their own channel'),
                 ),
-        async execute(context: CommandContext, interaction: CommandInteraction) {
-            if(!interaction.isChatInputCommand()) return;
+        async execute(context: CommandContext, interaction: CommandInteraction): Promise<void> {
+            if(!interaction.isChatInputCommand()) {return;}
             
             if (!interaction.guild) {
-                interaction.reply({content: "You must be in a server to use this command", ephemeral: true});
+                interaction.reply({content: 'You must be in a server to use this command', ephemeral: true});
                 return;
             }
 
             if (!getGuildMemberFromInteraction(interaction).permissions.has(PermissionFlagsBits.MoveMembers)) {
-                interaction.reply({content: "You do not have permissions to move members", ephemeral: true})
+                interaction.reply({content: 'You do not have permissions to move members', ephemeral: true});
                 return;
             }
 
-            const voiceChannel = getVoiceChannelFromInteraction(interaction)
+            const voiceChannel = getVoiceChannelFromInteraction(interaction);
             if (!voiceChannel) {
-                interaction.reply({content: "You must be in a voice channel to use this command", ephemeral: true})
+                interaction.reply({content: 'You must be in a voice channel to use this command', ephemeral: true});
                 return;
             }
 
-            const voiceChannels = getVoiceChannels(interaction);
+            const voiceChannels = getVoiceChannels(interaction.guild);
             if (!voiceChannels.length) {
-                interaction.reply({content: "There must be at least 2 voice channels to use this command"});
+                interaction.reply({content: 'There must be at least 2 voice channels to use this command'});
                 return;
             }
 
             const subcommand = interaction.options.getSubcommand();
-            if (getVoiceChannelMembers(voiceChannel).size < 2 && subcommand != Subcommands.Reset){
-                interaction.reply({content: "You must have at least 2 users in your voice channel to shuffle", ephemeral: true});
+            if (getVoiceChannelMembers(voiceChannel).length < 2 && subcommand !== Subcommands.Reset){
+                interaction.reply({content: 'You must have at least 2 users in your voice channel to shuffle', ephemeral: true});
                 return;
             }
 
@@ -86,37 +88,31 @@ export default (context: CommandContext) => {
                     return;
                 }
             }
-        }
-    }
-}
+        },
+    };
+};
 
 
 let shuffledTeams: ShuffledTeams = {
     team1: [],
-    team2: []
-}
+    team2: [],
+};
 
-function getVoiceChannelMembers(voiceChannel: VoiceBasedChannel): Collection<string, GuildMember>{
-    return voiceChannel.members.filter((member) => {
-        return !member.user.bot;
-    });
-}
-
-function buildTeamMessage(teamNumber: number, users: GuildMember[]){
-    let message = "Team " + teamNumber + "\n";
+function buildTeamMessage(teamNumber: number, users: GuildMember[]): string {
+    let message = 'Team ' + teamNumber + '\n';
     for (let i = 0; i < users.length; i++){
-        message += users[i].user.username + "\n";
+        message += users[i].user.username + '\n';
     }
     return message;
 }
 
-function shuffleChannelMembers(context: CommandContext, interaction: CommandInteraction, voiceChannel: VoiceBasedChannel) {
+function shuffleChannelMembers(context: CommandContext, interaction: CommandInteraction, voiceChannel: VoiceBasedChannel): void {
     shuffledTeams = {
         team1: [],
-        team2: []
-    }
+        team2: [],
+    };
 
-    const members: GuildMember[] = Array.from(getVoiceChannelMembers(voiceChannel).values());
+    const members: GuildMember[] = getVoiceChannelMembers(voiceChannel);
     const teams = randomlySplitArray(members);
     shuffledTeams.team1 = teams[0];
     shuffledTeams.team2 = teams[1];
@@ -130,31 +126,31 @@ function moveShuffledMembers(
     context: CommandContext,
     interaction: CommandInteraction,
     voiceChannel: VoiceBasedChannel,
-    voiceChannels: VoiceBasedChannel[]
-){
-    playAudioClipByFilename(context.logger, voiceChannel, "fight.mp3");
+    voiceChannels: VoiceBasedChannel[],
+): void {
+    playAudioClipByFilename(context.botAudioPlayer, voiceChannel, 'fight.mp3');
     moveUsers(voiceChannels[0], shuffledTeams.team1);
     moveUsers(voiceChannels[1], shuffledTeams.team2);
-    interaction.reply({content: "Moved users into teams"});
+    interaction.reply({content: 'Moved users into teams'});
 
 }
 
-function resetShuffle(context: CommandContext, interaction: CommandInteraction, voiceChannel: VoiceBasedChannel){
+function resetShuffle(context: CommandContext, interaction: CommandInteraction, voiceChannel: VoiceBasedChannel): void {
     // We don't reset the shuffle state here so that users can reuse the same shuffle
     moveUsers(voiceChannel, shuffledTeams.team2);
-    interaction.reply({content: "Shuffle has been reset", ephemeral: true});
+    interaction.reply({content: 'Shuffle has been reset', ephemeral: true});
 }
 
-function moveUsers(voiceChannel: VoiceBasedChannel, users: GuildMember[]){
+function moveUsers(voiceChannel: VoiceBasedChannel, users: GuildMember[]): void {
     for (let i=0; i < users.length; i++){
         users[i].voice.setChannel(voiceChannel);
     }
 }
 
-function randomlySplitArray(fullArray: GuildMember[]){
+function randomlySplitArray(fullArray: GuildMember[]): GuildMember[][] {
     const shuffledArray = shuffleArray(fullArray);
     const midpoint = Math.floor(shuffledArray.length / 2);
-    const isOdd = shuffledArray.length % 2 == 1;
+    const isOdd = shuffledArray.length % 2 === 1;
     const a = shuffledArray.slice(0, midpoint);
     const b = shuffledArray.slice(midpoint, midpoint * 2);
     if (isOdd){
@@ -168,7 +164,7 @@ function randomlySplitArray(fullArray: GuildMember[]){
     return [a, b];
 }
 
-function shuffleArray(a: GuildMember[]) {
+function shuffleArray(a: GuildMember[]): GuildMember[] {
     for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
