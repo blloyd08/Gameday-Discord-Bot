@@ -67,7 +67,7 @@ export async function setClientSlashCommands(context: CommandContext, client: Bo
 export async function registerSlashCommands(logger: Logger, appConfig: AppConfig, guildId: string, commands: SlashCommand[]): Promise<void> {
     try {
         logger.info('Starting to register %s application (/) commands. Guild ID: %s.', commands.length, guildId);
-        const rest = new REST({ version: '9' }).setToken(appConfig.auth.discord);
+        const rest = new REST({ version: '10' }).setToken(appConfig.auth.discord);
         await rest.put(
             Routes.applicationGuildCommands(appConfig.clientId, guildId),
             { body: commands.map(command => command.builder.toJSON()) },
