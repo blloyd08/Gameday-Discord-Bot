@@ -48,8 +48,9 @@ The bot includes scheduled jobs for game day notifications:
 
 1. Clone the repository
 2. Run `npm install` to install dependencies
-3. Configure Discord bot token in environment variables
-4. Start the bot with `npm start`
+3. Configure AWS credentials so the bot can access S3 (the bot downloads `appConfig.json` from S3 on startup, which contains the Discord bot token and other settings)
+4. Build with `npm run build`
+5. Start the bot with `npm start`
 
 ## Permissions
 
@@ -65,6 +66,7 @@ The bot requires the following permissions to function properly:
 - **Read Message History** - To read messages in text channels (for command detection)
 - **Send Messages** - To respond to commands
 - **Use Slash Commands** - To use slash command functionality
+- **Move Members** - To move members between voice channels (required for `/shuffle move`)
 
 ### Permission Calculator
 The bot requires a permission integer of `277028736` which includes:
@@ -89,13 +91,23 @@ The bot requires a permission integer of `277028736` which includes:
 - `/audio clip:<clip_name>` - Play a specific audio clip
   - Use `intro` to play your personalized intro clip
   - Use other clip names to play general audio clips from the library
+- `/shuffle <subcommand>` - Split voice channel members into 2 teams (requires Move Members permission)
+  - `generate` - Randomly shuffle members and display the teams
+  - `move` - Move shuffled members into separate voice channels
+  - `reset` - Move all shuffled members back to the first voice channel
+- `/admin <subcommand>` - Admin-only commands (requires Administrator permission)
+  - `list` - List all member usernames and IDs in the server
+  - `update` - Hot-reload audio or app configuration from S3
 
 ## Dependencies
 
 - discord.js: Discord API integration
 - @discordjs/voice: Audio streaming capabilities
+- @discordjs/opus: Opus codec for voice encoding
 - @aws-sdk/client-s3: AWS S3 integration
+- libsodium-wrappers: Voice channel encryption
 - Winston: Logging system
+- winston-daily-rotate-file: Log rotation
 - node-schedule: Scheduled tasks
 - ffmpeg-static: Audio processing
 
