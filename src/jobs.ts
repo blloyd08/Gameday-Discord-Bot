@@ -39,7 +39,7 @@ function addMessageGamedayGroupJob(logger: Logger, appConfig: AppConfig, bot: Bo
 
 function getDayBeforeJobParameters(appConfig: AppConfig): JobParameters {
     const dayBeforeName = days[appConfig.jobs.gameday.dayOfWeek];
-    const dayBeforeSchedule = buildScheduleRule(appConfig.jobs.gameday.startHour, appConfig.jobs.gameday.dayOfWeek - 1);
+    const dayBeforeSchedule = buildScheduleRule(appConfig.jobs.gameday.startHour, (appConfig.jobs.gameday.dayOfWeek - 1 + 7) % 7);
     const dayBeforeMessage = `Gameday is tomorrow (${dayBeforeName}) 7 PM(PST)! :fire: :fire: :fire: `;
 
     const parameters = buildJobParameters(dayBeforeSchedule, dayBeforeMessage);

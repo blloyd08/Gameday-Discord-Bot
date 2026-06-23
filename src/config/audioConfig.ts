@@ -32,7 +32,7 @@ export class AudioConfig {
         if (!jsonObject.users) {
             throw new Error('`users` in audio config is a required field');
         }
-        if (!jsonObject.users) {
+        if (!jsonObject.clips) {
             throw new Error('`clips` in audio config is a required field');
         }
 
