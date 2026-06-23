@@ -5,29 +5,23 @@ import type { AudioConfig} from '../config/audioConfig';
 import { AUDIO_MANIFEST_FILE_NAME, getAudioClipFilePath, getAudioConfig, getAudioManifestFilePath } from '../config/audioConfig';
 
 export async function initialize_audio_files(logger: Logger): Promise<AudioConfig> {
-  // download json file
-  return downloadFile(logger, getAudioManifestFilePath(), BUCKET, AUDIO_MANIFEST_FILE_NAME, DataType.Text).then(() =>{
-    const audioConfig: AudioConfig = getAudioConfig(logger);
-    return audioConfig;
-  }).then((audioConfig) =>{
-    downloadMissingFiles(logger, audioConfig.getIntroClipFileNames());
-    return audioConfig;
-  }).then((audioConfig) => {
-    downloadMissingFiles(logger, audioConfig.getAudioClipFileNames());
-    return Promise.resolve(audioConfig);
-  }).catch(e =>{
-    logger.error('Error downloading audio files', e);
-    return Promise.reject(e);
-  });
+  await downloadFile(logger, getAudioManifestFilePath(), BUCKET, AUDIO_MANIFEST_FILE_NAME, DataType.Text);
+  const audioConfig: AudioConfig = getAudioConfig(logger);
+  await downloadMissingFiles(logger, audioConfig.getIntroClipFileNames());
+  await downloadMissingFiles(logger, audioConfig.getAudioClipFileNames());
+  return audioConfig;
 }
 
-function downloadMissingFiles(logger: Logger, fileNames: string[]): void {
-  fileNames.forEach(fileName => {
+async function downloadMissingFiles(logger: Logger, fileNames: string[]): Promise<void> {
+  await Promise.all(fileNames.map(async fileName => {
     const filePath = getAudioClipFilePath(fileName);
-    
-    if (!fs.existsSync(filePath)){
+    if (!fs.existsSync(filePath)) {
       const s3Key = `clips/${fileName}`;
-      downloadFile(logger, filePath, BUCKET, s3Key, DataType.Data);
+      try {
+        await downloadFile(logger, filePath, BUCKET, s3Key, DataType.Data);
+      } catch {
+        logger.warn(`Skipping missing audio clip: ${fileName}`);
+      }
     }
-  });
+  }));
 }

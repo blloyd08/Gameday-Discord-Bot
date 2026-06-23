@@ -17,7 +17,6 @@ export async function downloadFile(logger: Logger, filePath: string, bucketName:
 
   const client = new S3Client({});
   logger.info(`Attempting to download ${bucketName}/${key} to ${filePath}`);
-  const writeStream = fs.createWriteStream(filePath);
 
   try {
     const response = await client.send(command);
@@ -26,15 +25,25 @@ export async function downloadFile(logger: Logger, filePath: string, bucketName:
       return;
     }
 
-    if (dataType === DataType.Text) {
-      const data = await response.Body.transformToString();
-      writeStream.write(data);
-    } else {
-      const data = await response.Body.transformToByteArray();
-      writeStream.write(data);
-    }
+    const writeStream = fs.createWriteStream(filePath);
+    await new Promise<void>((resolve, reject) => {
+      writeStream.on('error', reject);
+      writeStream.on('finish', resolve);
+
+      if (dataType === DataType.Text) {
+        response.Body!.transformToString().then(data => {
+          writeStream.end(data);
+        }).catch(reject);
+      } else {
+        response.Body!.transformToByteArray().then(data => {
+          writeStream.end(data);
+        }).catch(reject);
+      }
+    });
+
     logger.info(`${filePath} has been created!`);
   } catch (err) {
     logger.error(`Failed to write data to ${filePath}! Error: ${err}`);
+    throw err;
   }
 }

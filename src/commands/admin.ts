@@ -43,7 +43,8 @@ export default (context: CommandContext) => {
             
             const guildMember = getGuildMemberFromInteraction(interaction);
             if (!guildMember.permissions.has(PermissionFlagsBits.Administrator)) {
-                interaction.reply({content: 'You do not have permissions to run this command', ephemeral: true});
+                await interaction.reply({content: 'You do not have permissions to run this command', ephemeral: true});
+                return;
             }
             switch(interaction.options.getSubcommand()) {
                 case Subcommands.List: {
