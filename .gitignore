@@ -6,6 +6,5 @@ specs/
 
 audioClips/
 tweet.txt
-*.log
-*.log.gz
+logs/
 .*.json

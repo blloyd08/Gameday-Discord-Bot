@@ -17,6 +17,7 @@ export function createLogger(serviceName: string, logLevel: string): Logger {
         transports: [
           new DailyRotateFile({
             level: 'error',
+            dirname: 'logs',
             filename: 'bot-error-%DATE%.log',
             datePattern: 'YYYY-MM-DD-HH',
             zippedArchive: true,
@@ -24,7 +25,7 @@ export function createLogger(serviceName: string, logLevel: string): Logger {
             maxFiles: '14d',
           }),
           new DailyRotateFile({
-            level: 'error',
+            dirname: 'logs',
             filename: 'bot-combined-%DATE%.log',
             datePattern: 'YYYY-MM-DD-HH',
             zippedArchive: true,
