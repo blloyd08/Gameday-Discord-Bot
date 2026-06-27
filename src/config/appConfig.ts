@@ -13,7 +13,7 @@ export function getAppConfigFilePath(): string {
     return APP_CONFIG_FILE_PATH;
 }
 
-export function getConfigFilePath(fileName: string): string {  
+export function getConfigFilePath(fileName: string): string {
     return path.join(CONFIG_FOLDER_PATH, fileName);
 }
 
@@ -23,17 +23,41 @@ class Auth {
     ) {}
 }
 
-class GamedayJob {
+export abstract class BaseJob {
+    abstract readonly type: string;
     constructor(
         public readonly dayOfWeek: number,
-        public readonly startHour: number,
-        public readonly group: string,
+        public readonly hour: number,
+        public readonly minute: number,
     ) {}
 }
 
-class Jobs {
+export class MessageJob extends BaseJob {
+    readonly type = 'message' as const;
     constructor(
-        public readonly gameday: GamedayJob,
+        dayOfWeek: number,
+        hour: number,
+        minute: number,
+        public readonly channelId: string,
+        public readonly message: string,
+    ) { super(dayOfWeek, hour, minute); }
+}
+
+export class AudioJob extends BaseJob {
+    readonly type = 'audio' as const;
+    constructor(
+        dayOfWeek: number,
+        hour: number,
+        minute: number,
+        public readonly clipFileName: string,
+        public readonly voiceChannelId?: string,
+    ) { super(dayOfWeek, hour, minute); }
+}
+
+export class GuildConfig {
+    constructor(
+        public readonly jobs: Map<string, BaseJob>,
+        public readonly botAdminRoleId?: string,
     ) {}
 }
 
@@ -41,30 +65,121 @@ export class AppConfig {
     constructor(
         public readonly logLevel: string,
         public readonly clientId: string,
-        public readonly guilds: string[],
+        public readonly ownerId: string,
+        public readonly guilds: Map<string, GuildConfig>,
         public readonly auth: Auth,
-        public readonly jobs: Jobs,
     ) {}
 
+    withAddedGuild(guildId: string): AppConfig {
+        const newGuilds = new Map(this.guilds);
+        newGuilds.set(guildId, new GuildConfig(new Map()));
+        return new AppConfig(this.logLevel, this.clientId, this.ownerId, newGuilds, this.auth);
+    }
+
+    withUpdatedJob(guildId: string, jobName: string, job: BaseJob): AppConfig {
+        const existing = this.guilds.get(guildId);
+        const newJobs = new Map(existing?.jobs ?? []);
+        newJobs.set(jobName, job);
+        const newGuilds = new Map(this.guilds);
+        newGuilds.set(guildId, new GuildConfig(newJobs, existing?.botAdminRoleId));
+        return new AppConfig(this.logLevel, this.clientId, this.ownerId, newGuilds, this.auth);
+    }
+
+    withRemovedJob(guildId: string, jobName: string): AppConfig {
+        const existing = this.guilds.get(guildId);
+        if (!existing) throw new Error(`Guild ${guildId} not found in config`);
+        const newJobs = new Map(existing.jobs);
+        newJobs.delete(jobName);
+        const newGuilds = new Map(this.guilds);
+        newGuilds.set(guildId, new GuildConfig(newJobs, existing.botAdminRoleId));
+        return new AppConfig(this.logLevel, this.clientId, this.ownerId, newGuilds, this.auth);
+    }
+
+    withUpdatedBotAdminRole(guildId: string, roleId: string): AppConfig {
+        const existing = this.guilds.get(guildId);
+        if (!existing) throw new Error(`Guild ${guildId} not found in config`);
+        const newGuilds = new Map(this.guilds);
+        newGuilds.set(guildId, new GuildConfig(existing.jobs, roleId));
+        return new AppConfig(this.logLevel, this.clientId, this.ownerId, newGuilds, this.auth);
+    }
+
+    toJSON(): object {
+        const guildsObj: Record<string, object> = {};
+        this.guilds.forEach((guildConfig, guildId) => {
+            const jobsObj: Record<string, object> = {};
+            guildConfig.jobs.forEach((job, jobName) => {
+                if (job instanceof MessageJob) {
+                    jobsObj[jobName] = {
+                        type: 'message',
+                        dayOfWeek: job.dayOfWeek,
+                        hour: job.hour,
+                        minute: job.minute,
+                        channelId: job.channelId,
+                        message: job.message,
+                    };
+                } else if (job instanceof AudioJob) {
+                    jobsObj[jobName] = {
+                        type: 'audio',
+                        dayOfWeek: job.dayOfWeek,
+                        hour: job.hour,
+                        minute: job.minute,
+                        clipFileName: job.clipFileName,
+                        ...(job.voiceChannelId && { voiceChannelId: job.voiceChannelId }),
+                    };
+                }
+            });
+            guildsObj[guildId] = {
+                ...(guildConfig.botAdminRoleId && { botAdminRoleId: guildConfig.botAdminRoleId }),
+                jobs: jobsObj,
+            };
+        });
+        return {
+            logLevel: this.logLevel,
+            clientId: this.clientId,
+            ownerId: this.ownerId,
+            auth: { discord: this.auth.discord },
+            guilds: guildsObj,
+        };
+    }
+
     static fromSerialized(serialized: string): AppConfig {
-        const jsonObject: AppConfig = JSON.parse(serialized);
+        const jsonObject = JSON.parse(serialized);
 
-        const auth: Auth = new Auth(
-            jsonObject['auth']['discord'],
-        );
+        const auth: Auth = new Auth(jsonObject['auth']['discord']);
 
-        const gamedayJob: GamedayJob = new GamedayJob(
-            jsonObject['jobs']['gameday']['dayOfWeek'],
-            jsonObject['jobs']['gameday']['startHour'],
-            jsonObject['jobs']['gameday']['group'],
-        );
+        const guilds = new Map<string, GuildConfig>();
+        for (const [guildId, rawGuild] of Object.entries<any>(jsonObject['guilds'])) {
+            const jobs = new Map<string, BaseJob>();
+            for (const [jobName, rawJob] of Object.entries<any>(rawGuild.jobs ?? {})) {
+                if (rawJob.type === 'message') {
+                    jobs.set(jobName, new MessageJob(
+                        rawJob.dayOfWeek,
+                        rawJob.hour,
+                        rawJob.minute,
+                        rawJob.channelId,
+                        rawJob.message,
+                    ));
+                } else if (rawJob.type === 'audio') {
+                    jobs.set(jobName, new AudioJob(
+                        rawJob.dayOfWeek,
+                        rawJob.hour,
+                        rawJob.minute,
+                        rawJob.clipFileName,
+                        rawJob.voiceChannelId,
+                    ));
+                } else {
+                    throw new Error(`Unknown job type "${rawJob.type}" for job "${jobName}" in guild "${guildId}"`);
+                }
+            }
+            guilds.set(guildId, new GuildConfig(jobs, rawGuild.botAdminRoleId));
+        }
 
         return new AppConfig(
             jsonObject['logLevel'],
             jsonObject['clientId'],
-            jsonObject['guilds'],
+            jsonObject['ownerId'],
+            guilds,
             auth,
-            new Jobs(gamedayJob),
         );
     }
 }
@@ -75,25 +190,22 @@ export async function getAppConfig(): Promise<AppConfig> {
     logger.info(`Reading app config from: ${APP_CONFIG_FILE_PATH}`);
     const appConfigFilePath = getAppConfigFilePath();
 
-    // download json file
-    return downloadFile(logger, getAppConfigFilePath(), BUCKET, APP_CONFIG_FILE_NAME, DataType.Text).then(() =>{
+    return downloadFile(logger, getAppConfigFilePath(), BUCKET, APP_CONFIG_FILE_NAME, DataType.Text).then(() => {
         if (existsSync(APP_CONFIG_FILE_PATH)) {
-            const appConfigJson: string = readFileSync(APP_CONFIG_FILE_PATH, {encoding:'utf8', flag:'r'}).toString();
+            const appConfigJson: string = readFileSync(APP_CONFIG_FILE_PATH, { encoding: 'utf8', flag: 'r' }).toString();
             const appConfig: AppConfig = AppConfig.fromSerialized(appConfigJson);
-            
+
             if (!appConfig.auth) {
                 throw Error('No auth found in app config');
             }
-            
+
             logger.info(`Finished loading app config. Log level: ${appConfig.logLevel} Client Id: ${appConfig.clientId}`);
             return appConfig;
         } else {
             throw Error(`App config doesn't exist at ${APP_CONFIG_FILE_PATH}`);
         }
-    }).catch(e =>{
+    }).catch(e => {
         logger.error('Error downloading app config', e);
         throw Error(`Unable to download app config to ${appConfigFilePath} from ${BUCKET}`);
     });
-
-
 }

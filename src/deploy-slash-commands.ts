@@ -15,7 +15,7 @@ getAppConfig()
             return readCommandFiles({audioConfig, appConfig, logger, client: createBotClient({}), botAudioPlayer});
         })
         .then(slashCommands => {
-            for (const guildId of appConfig.guilds) {
+            for (const guildId of appConfig.guilds.keys()) {
                 registerSlashCommands(logger, appConfig, guildId, slashCommands);
             }
         })

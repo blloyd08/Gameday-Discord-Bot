@@ -1,22 +1,11 @@
-import type { AppConfig } from '../config/appConfig';
 import { existsSync, mkdirSync } from 'fs';
-import type { BotClient } from '../bot';
-import type { CommandInteraction, Guild, GuildMember, TextChannel, User, VoiceBasedChannel, VoiceState } from 'discord.js';
+import type { CommandInteraction, Guild, GuildMember, User, VoiceBasedChannel, VoiceState } from 'discord.js';
 import { ChannelType } from 'discord.js';
 
 export function createDirectoryIfAbsent(directory: string): void {
   if (!existsSync(directory)) {
     mkdirSync(directory);
   }
-}
-
-export function sendTextMessageToAllGuilds(appConfig: AppConfig, bot: BotClient, message: string): void {
-  appConfig.guilds.forEach( guildId => {
-    const textChannel = bot.guilds.cache.get(guildId)?.channels.cache.filter(channel => channel.type === ChannelType.GuildText).first();
-    if (textChannel) {
-        (textChannel as TextChannel).send(message);
-    }
-  });
 }
 
 export function getGuildMemberFromInteraction(interaction: CommandInteraction): GuildMember {

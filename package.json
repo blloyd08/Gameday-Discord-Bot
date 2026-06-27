@@ -6,7 +6,7 @@
     "author": "Brian Lloyd",
     "scripts": {
         "build": "tsc",
-        "start": "node ./out/bot.js",
+        "start": "node ./out/main.js",
         "deploy": "node ./out/deploy-slash-commands.js",
         "lint": "eslint .",
         "lint-fix": "eslint --fix ."
