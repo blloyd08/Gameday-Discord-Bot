@@ -31,6 +31,32 @@ import type { BotClient } from './bot';
         scheduleJobs(logger, appConfig, client, botAudioPlayer);
     }
 
+    async function dmOwner(message: string): Promise<void> {
+        try {
+            const owner = await client.users.fetch(appConfig.ownerId);
+            await owner.send(message);
+        } catch (err) {
+            logger.warn(`Could not DM owner: ${err}`);
+        }
+    }
+
+    function buildStartupSummary(): string {
+        const guildLines = Array.from(appConfig.guilds.entries()).map(([guildId, guildConfig]) => {
+            const guildName = client.guilds.cache.get(guildId)?.name ?? guildId;
+            const jobCount = guildConfig.jobs.size;
+            return `  • ${guildName} — ${jobCount} job${jobCount !== 1 ? 's' : ''}`;
+        });
+
+        return [
+            '✅ Bot is online!',
+            '',
+            `**Guilds:** ${appConfig.guilds.size}`,
+            ...guildLines,
+            '',
+            `**Log level:** ${appConfig.logLevel}`,
+        ].join('\n');
+    }
+
     try {
         client = createBotClient({ audioConfig: updateAudioConfig, appConfig: updateAppConfig });
 
@@ -39,14 +65,20 @@ import type { BotClient } from './bot';
         await setClientSlashCommands(context, client);
 
         client.on(Events.ClientReady, async () => {
-            for (const [guildId, guild] of client.guilds.cache) {
-                if (!appConfig.guilds.has(guildId)) {
-                    logger.warn(`Guild "${guild.name}" (${guildId}) is not in the allowlist — leaving.`);
-                    await guild.leave();
+            try {
+                for (const [guildId, guild] of client.guilds.cache) {
+                    if (!appConfig.guilds.has(guildId)) {
+                        logger.warn(`Guild "${guild.name}" (${guildId}) is not in the allowlist — leaving.`);
+                        await guild.leave();
+                    }
                 }
+                scheduleJobs(logger, appConfig, client, botAudioPlayer);
+                logger.info('\n\n#########################################\nLogged in to discord! Client is now ready\n#########################################\n\n\n');
+                await dmOwner(buildStartupSummary());
+            } catch (err) {
+                logger.error(`Error during startup: ${err}`);
+                await dmOwner(`⚠️ Bot encountered an error during startup:\n\`\`\`\n${err}\n\`\`\``);
             }
-            scheduleJobs(logger, appConfig, client, botAudioPlayer);
-            logger.info('\n\n#########################################\nLogged in to discord! Client is now ready\n#########################################\n\n\n');
         });
 
         client.on(Events.GuildCreate, async (guild) => {
@@ -55,10 +87,12 @@ import type { BotClient } from './bot';
             } else {
                 try {
                     await sendGuildApprovalDM(logger, client, appConfig.ownerId, guild);
-                    await guild.systemChannel?.send(
-                        '👋 Thanks for adding this bot! Your request is pending review by the bot owner. ' +
-                        'You\'ll be notified here once a decision has been made.',
-                    );
+                    if (guild.systemChannel) {
+                        await guild.systemChannel.send(
+                            '👋 Thanks for adding this bot! Your request is pending review by the bot owner. ' +
+                            'You\'ll be notified here once a decision has been made.',
+                        );
+                    }
                 } catch (err) {
                     logger.error(`Could not request approval for guild "${guild.name}" (${guild.id}): ${err}`);
                 }
@@ -116,18 +150,21 @@ import type { BotClient } from './bot';
             }
         });
 
-        client.on(Events.Error, (error) => {
+        client.on(Events.Error, async (error) => {
             logger.error('Client error encountered');
             logger.error(error);
+            await dmOwner(`⚠️ Client error:\n\`\`\`\n${error.message}\n\`\`\``);
         });
 
-        client.on(Events.ShardError, error => {
+        client.on(Events.ShardError, async (error) => {
             logger.error('A websocket connection encountered an error');
             logger.error(error);
+            await dmOwner(`⚠️ Shard error:\n\`\`\`\n${error.message}\n\`\`\``);
         });
 
-        client.on(Events.ShardDisconnect, (event, shardId) => {
+        client.on(Events.ShardDisconnect, async (event, shardId) => {
             logger.error(`Shard disconnected: (${shardId}) ${event}`);
+            await dmOwner(`⚠️ Shard ${shardId} disconnected (code: ${event.code}).`);
         });
 
         client.on(Events.ShardReconnecting, (shardId) => {

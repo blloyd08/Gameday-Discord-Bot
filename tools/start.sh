@@ -9,4 +9,4 @@ npm run build
 
 # start the discord bot
 npm install pm2@latest -g
-pm2 start ./out/bot.js
+pm2 start ./out/main.js
