@@ -72,7 +72,7 @@ function buildTableRow(guildName: string, jobName: string, job: BaseJob, bot: Bo
 }
 
 function formatJobsTable(rows: JobTableRow[]): string {
-    if (rows.length === 0) return 'No jobs scheduled.';
+    if (rows.length === 0) {return 'No jobs scheduled.';}
 
     const headers = ['Guild', 'Job', 'Type', 'Schedule', 'Details'];
     const columns = [
@@ -84,7 +84,7 @@ function formatJobsTable(rows: JobTableRow[]): string {
     ];
     const widths = headers.map((h, i) => Math.max(h.length, ...columns[i].map(c => c.length)));
 
-    const pad = (s: string, w: number) => s.padEnd(w);
+    const pad = (s: string, w: number): string => s.padEnd(w);
     const divider = `+${widths.map(w => '-'.repeat(w + 2)).join('+')}+`;
     const headerRow = `|${headers.map((h, i) => ` ${pad(h, widths[i])} `).join('|')}|`;
     const dataRows = rows.map(r => {
@@ -145,9 +145,7 @@ function buildScheduleRule(hour: number, minute: number, dayOfWeek: number): sch
     rule.second = 0;
     rule.minute = minute;
     rule.hour = hour;
-    if (dayOfWeek) {
-        rule.dayOfWeek = dayOfWeek;
-    }
+    rule.dayOfWeek = dayOfWeek;
     return rule;
 }
 

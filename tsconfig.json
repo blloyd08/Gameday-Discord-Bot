@@ -12,7 +12,7 @@
 
     /* Language and Environment */
     "target": "es2016",                                  /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
-    // "lib": [],                                        /* Specify a set of bundled library declaration files that describe the target runtime environment. */
+    "lib": ["ES2016", "DOM", "DOM.Iterable", "ScriptHost", "ES2022.Error"], /* Base ES2016 lib set, plus ES2022's Error `cause` option (Node has supported it since v16.9; TS just doesn't include the type at this target). */
     // "jsx": "preserve",                                /* Specify what JSX code is generated. */
     // "experimentalDecorators": true,                   /* Enable experimental support for legacy experimental decorators. */
     // "emitDecoratorMetadata": true,                    /* Emit design-type metadata for decorated declarations in source files. */

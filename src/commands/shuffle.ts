@@ -59,7 +59,7 @@ export default (context: CommandContext) => {
             }
 
             const voiceChannels = getVoiceChannels(interaction.guild);
-            if (!voiceChannels.length) {
+            if (voiceChannels.length < 2) {
                 interaction.reply({content: 'There must be at least 2 voice channels to use this command'});
                 return;
             }

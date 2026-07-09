@@ -1,6 +1,6 @@
 import { initialize_audio_files } from '../aws/startup.js';
 import type { CommandInteraction } from 'discord.js';
-import { SlashCommandBuilder, MessageFlags, ChannelType } from 'discord.js';
+import { SlashCommandBuilder, MessageFlags, ChannelType, PermissionFlagsBits } from 'discord.js';
 import type { CommandContext } from '../util/slashCommands.js';
 import { registerSlashCommands, setClientSlashCommands } from '../util/slashCommands.js';
 import { getGuildMemberFromInteraction } from '../util/util.js';
@@ -22,7 +22,7 @@ enum Subcommands {
 }
 
 function hasAdminPermission(context: CommandContext, interaction: CommandInteraction): boolean {
-    if (!interaction.guildId) return false;
+    if (!interaction.guildId) {return false;}
     const guildMember = getGuildMemberFromInteraction(interaction);
     const guildConfig = context.appConfig.guilds.get(interaction.guildId);
 
@@ -32,7 +32,7 @@ function hasAdminPermission(context: CommandContext, interaction: CommandInterac
     }
 
     return interaction.guild?.ownerId === interaction.user.id ||
-           guildMember.permissions.has(BigInt(8)); // Administrator
+           guildMember.permissions.has(PermissionFlagsBits.Administrator);
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -196,6 +196,15 @@ export default (context: CommandContext) => {
                 return;
             }
 
+            if (subcommand === Subcommands.Update) {
+                if (interaction.user.id !== context.appConfig.ownerId) {
+                    await interaction.reply({ content: 'Only the bot owner can update configuration.', flags: MessageFlags.Ephemeral });
+                    return;
+                }
+                await update(context, interaction);
+                return;
+            }
+
             if (!hasAdminPermission(context, interaction)) {
                 await interaction.reply({ content: 'You do not have permissions to run this command', flags: MessageFlags.Ephemeral });
                 return;
@@ -216,10 +225,6 @@ export default (context: CommandContext) => {
                 }
                 case Subcommands.RemoveJob: {
                     await removeJob(context, interaction);
-                    break;
-                }
-                case Subcommands.Update: {
-                    update(context, interaction);
                     break;
                 }
                 default: {
@@ -247,7 +252,7 @@ function formatJobSummary(job: MessageJob | AudioJob): string {
 }
 
 async function setAdminRole(context: CommandContext, interaction: CommandInteraction): Promise<void> {
-    if (!interaction.isChatInputCommand() || !interaction.guildId) return;
+    if (!interaction.isChatInputCommand() || !interaction.guildId) {return;}
 
     if (interaction.guild?.ownerId !== interaction.user.id) {
         await interaction.reply({ content: 'Only the server owner can set the bot admin role.', flags: MessageFlags.Ephemeral });
@@ -265,7 +270,7 @@ async function setAdminRole(context: CommandContext, interaction: CommandInterac
 }
 
 async function configureMessageJob(context: CommandContext, interaction: CommandInteraction): Promise<void> {
-    if (!interaction.isChatInputCommand() || !interaction.guildId) return;
+    if (!interaction.isChatInputCommand() || !interaction.guildId) {return;}
 
     const jobName = interaction.options.getString('name', true);
     const dayOfWeek = interaction.options.getInteger('day', true);
@@ -275,12 +280,11 @@ async function configureMessageJob(context: CommandContext, interaction: Command
     const message = interaction.options.getString('message', true);
 
     const job = new MessageJob(dayOfWeek, hour, minute, channel.id, message);
-    const newAppConfig = context.appConfig.withUpdatedJob(interaction.guildId, jobName, job);
     const existingJob = context.appConfig.guilds.get(interaction.guildId)?.jobs.get(jobName);
 
     try {
         await sendJobApprovalDM(context.logger, context.client, context.appConfig.ownerId, {
-            newAppConfig,
+            job,
             guildId: interaction.guildId,
             guildName: interaction.guild?.name ?? interaction.guildId,
             requesterId: interaction.user.id,
@@ -297,7 +301,7 @@ async function configureMessageJob(context: CommandContext, interaction: Command
 }
 
 async function configureAudioJob(context: CommandContext, interaction: CommandInteraction): Promise<void> {
-    if (!interaction.isChatInputCommand() || !interaction.guildId) return;
+    if (!interaction.isChatInputCommand() || !interaction.guildId) {return;}
 
     const jobName = interaction.options.getString('name', true);
     const dayOfWeek = interaction.options.getInteger('day', true);
@@ -307,12 +311,11 @@ async function configureAudioJob(context: CommandContext, interaction: CommandIn
     const clipFileName = interaction.options.getString('clip', true);
 
     const job = new AudioJob(dayOfWeek, hour, minute, clipFileName, channel?.id);
-    const newAppConfig = context.appConfig.withUpdatedJob(interaction.guildId, jobName, job);
     const existingJob = context.appConfig.guilds.get(interaction.guildId)?.jobs.get(jobName);
 
     try {
         await sendJobApprovalDM(context.logger, context.client, context.appConfig.ownerId, {
-            newAppConfig,
+            job,
             guildId: interaction.guildId,
             guildName: interaction.guild?.name ?? interaction.guildId,
             requesterId: interaction.user.id,
@@ -329,7 +332,7 @@ async function configureAudioJob(context: CommandContext, interaction: CommandIn
 }
 
 async function removeJob(context: CommandContext, interaction: CommandInteraction): Promise<void> {
-    if (!interaction.isChatInputCommand() || !interaction.guildId) return;
+    if (!interaction.isChatInputCommand() || !interaction.guildId) {return;}
 
     const jobName = interaction.options.getString('name', true);
     const existingJob = context.appConfig.guilds.get(interaction.guildId)?.jobs.get(jobName);
@@ -339,11 +342,8 @@ async function removeJob(context: CommandContext, interaction: CommandInteractio
         return;
     }
 
-    const newAppConfig = context.appConfig.withRemovedJob(interaction.guildId, jobName);
-
     try {
         await sendJobApprovalDM(context.logger, context.client, context.appConfig.ownerId, {
-            newAppConfig,
             guildId: interaction.guildId,
             guildName: interaction.guild?.name ?? interaction.guildId,
             requesterId: interaction.user.id,
@@ -379,29 +379,28 @@ function listUsers(context: CommandContext, interaction: CommandInteraction): vo
         });
 }
 
-function update(context: CommandContext, interaction: CommandInteraction): void {
-    initialize_audio_files(context.logger)
-        .then(audioConfig => {
-            if (context.client.update.audioConfig) {
-                context.client.update.audioConfig(audioConfig);
-                context = {
-                    audioConfig,
-                    appConfig: context.appConfig,
-                    logger: context.logger,
-                    client: context.client,
-                    botAudioPlayer: context.botAudioPlayer,
-                };
-                setClientSlashCommands(context, context.client).then(() => {
-                    for (const guildId of context.appConfig.guilds.keys()) {
-                        registerSlashCommands(context.logger, context.appConfig, guildId, Array.from(context.client.commands.values()));
-                    }
-                });
-            }
-        })
-        .catch(err => {
-            context.logger.error(`Update audio files failed: ${err}`);
-            interaction.reply({ content: `Update audio files failed: ${err}`, flags: MessageFlags.Ephemeral });
-            return;
-        });
-    interaction.reply({ content: 'Audio files have been updated', flags: MessageFlags.Ephemeral });
+async function update(context: CommandContext, interaction: CommandInteraction): Promise<void> {
+    await interaction.reply({ content: 'Updating audio files...', flags: MessageFlags.Ephemeral });
+
+    try {
+        const audioConfig = await initialize_audio_files(context.logger);
+        if (context.client.update.audioConfig) {
+            context.client.update.audioConfig(audioConfig);
+            context = {
+                audioConfig,
+                appConfig: context.appConfig,
+                logger: context.logger,
+                client: context.client,
+                botAudioPlayer: context.botAudioPlayer,
+            };
+            await setClientSlashCommands(context, context.client);
+            await Promise.all(Array.from(context.appConfig.guilds.keys()).map(guildId =>
+                registerSlashCommands(context.logger, context.appConfig, guildId, Array.from(context.client.commands.values())),
+            ));
+        }
+        await interaction.editReply({ content: 'Audio files have been updated' });
+    } catch (err) {
+        context.logger.error(`Update audio files failed: ${err}`);
+        await interaction.editReply({ content: `Update audio files failed: ${err}` });
+    }
 }

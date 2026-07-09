@@ -66,12 +66,12 @@ import type { BotClient } from './bot';
 
         client.on(Events.ClientReady, async () => {
             try {
-                for (const [guildId, guild] of client.guilds.cache) {
-                    if (!appConfig.guilds.has(guildId)) {
-                        logger.warn(`Guild "${guild.name}" (${guildId}) is not in the allowlist — leaving.`);
-                        await guild.leave();
-                    }
-                }
+                const disallowedGuilds = Array.from(client.guilds.cache.values())
+                    .filter(guild => !appConfig.guilds.has(guild.id));
+                await Promise.all(disallowedGuilds.map(guild => {
+                    logger.warn(`Guild "${guild.name}" (${guild.id}) is not in the allowlist — leaving.`);
+                    return guild.leave();
+                }));
                 scheduleJobs(logger, appConfig, client, botAudioPlayer);
                 logger.info('\n\n#########################################\nLogged in to discord! Client is now ready\n#########################################\n\n\n');
                 await dmOwner(buildStartupSummary());

@@ -62,7 +62,7 @@ export default (context: CommandContext) => {
 };
 
 function tailLogs(context: CommandContext, interaction: CommandInteraction): void {
-    if (!interaction.isChatInputCommand()) return;
+    if (!interaction.isChatInputCommand()) {return;}
 
     const lineCount = interaction.options.getInteger('lines') ?? 20;
     const level = interaction.options.getString('level');

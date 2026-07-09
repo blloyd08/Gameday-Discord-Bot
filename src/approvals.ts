@@ -2,6 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'disc
 import type { ButtonInteraction, Guild } from 'discord.js';
 import type { Logger } from 'winston';
 import type { BotClient } from './bot.js';
+import type { BaseJob } from './config/appConfig.js';
 import { AppConfig, APP_CONFIG_FILE_NAME, getAppConfigFilePath } from './config/appConfig.js';
 import { uploadFile } from './aws/upload.js';
 import { downloadFile, BUCKET, DataType } from './aws/download.js';
@@ -15,17 +16,37 @@ const GUILD_APPROVE_PREFIX = 'approve_guild_';
 const GUILD_DENY_PREFIX = 'deny_guild_';
 
 export interface PendingJobRequest {
-    newAppConfig: AppConfig;
     guildId: string;
     guildName: string;
     requesterId: string;
     requesterName: string;
     jobName: string;
+    // The job to add/update. Left undefined for a removal request.
+    job?: BaseJob;
     jobSummary: string;
     existingJobSummary?: string;
 }
 
-const pendingRequests = new Map<string, PendingJobRequest>();
+const REQUEST_TTL_MS = 24 * 60 * 60 * 1000;
+
+function isExpired(createdAt: number): boolean {
+    return Date.now() - createdAt > REQUEST_TTL_MS;
+}
+
+function pruneExpired<T extends { createdAt: number }>(map: Map<string, T>): void {
+    for (const [id, entry] of map) {
+        if (isExpired(entry.createdAt)) {
+            map.delete(id);
+        }
+    }
+}
+
+setInterval(() => {
+    pruneExpired(pendingRequests);
+    pruneExpired(pendingGuildRequests);
+}, 60 * 60 * 1000).unref();
+
+const pendingRequests = new Map<string, PendingJobRequest & { createdAt: number }>();
 
 export async function sendJobApprovalDM(
     logger: Logger,
@@ -34,7 +55,7 @@ export async function sendJobApprovalDM(
     request: PendingJobRequest,
 ): Promise<void> {
     const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    pendingRequests.set(requestId, request);
+    pendingRequests.set(requestId, { ...request, createdAt: Date.now() });
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
@@ -48,7 +69,7 @@ export async function sendJobApprovalDM(
     );
 
     const isUpdate = request.existingJobSummary !== undefined;
-    const isRemoval = request.jobSummary.startsWith('**Removal request**');
+    const isRemoval = request.job === undefined;
     const title = isRemoval
         ? '**Job Removal Request**'
         : isUpdate
@@ -76,7 +97,7 @@ export async function sendJobApprovalDM(
     } catch (err) {
         pendingRequests.delete(requestId);
         logger.error(`Failed to DM bot owner for job approval: ${err}`);
-        throw new Error('Could not reach bot owner via DM. Ensure your DMs are open.');
+        throw new Error('Could not reach bot owner via DM. Ensure your DMs are open.', { cause: err });
     }
 }
 
@@ -94,12 +115,13 @@ export async function handleJobApprovalButton(
     const customId = interaction.customId;
     const isApprove = customId.startsWith(APPROVE_PREFIX);
     const isDeny = customId.startsWith(DENY_PREFIX);
-    if (!isApprove && !isDeny) return;
+    if (!isApprove && !isDeny) {return;}
 
     const requestId = isApprove ? customId.slice(APPROVE_PREFIX.length) : customId.slice(DENY_PREFIX.length);
     const request = pendingRequests.get(requestId);
 
-    if (!request) {
+    if (!request || isExpired(request.createdAt)) {
+        pendingRequests.delete(requestId);
         await interaction.reply({ content: 'This request has already been handled or has expired.', flags: MessageFlags.Ephemeral });
         return;
     }
@@ -113,7 +135,15 @@ export async function handleJobApprovalButton(
     }
 
     try {
-        writeFileSync(getAppConfigFilePath(), JSON.stringify(request.newAppConfig.toJSON(), null, 4), 'utf8');
+        // Re-derive the change against the current config on disk rather than trusting a
+        // snapshot captured back when the request was submitted, which could otherwise be
+        // stale if another job/guild request was approved in the meantime.
+        const currentAppConfig = AppConfig.fromSerialized(readFileSync(getAppConfigFilePath(), { encoding: 'utf8' }));
+        const newAppConfig = request.job
+            ? currentAppConfig.withUpdatedJob(request.guildId, request.jobName, request.job)
+            : currentAppConfig.withRemovedJob(request.guildId, request.jobName);
+
+        writeFileSync(getAppConfigFilePath(), JSON.stringify(newAppConfig.toJSON(), null, 4), 'utf8');
         await uploadFile(logger, getAppConfigFilePath(), BUCKET, APP_CONFIG_FILE_NAME);
         await downloadFile(logger, getAppConfigFilePath(), BUCKET, APP_CONFIG_FILE_NAME, DataType.Text);
         const updatedConfig = AppConfig.fromSerialized(readFileSync(getAppConfigFilePath(), { encoding: 'utf8' }));
@@ -143,6 +173,7 @@ interface PendingGuildRequest {
     guildName: string;
     guildOwnerId: string;
     memberCount: number;
+    createdAt: number;
 }
 
 const pendingGuildRequests = new Map<string, PendingGuildRequest>();
@@ -161,6 +192,7 @@ export async function sendGuildApprovalDM(
         guildName: guild.name,
         guildOwnerId: guildOwner.id,
         memberCount: guild.memberCount,
+        createdAt: Date.now(),
     });
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -188,7 +220,7 @@ export async function sendGuildApprovalDM(
     } catch (err) {
         pendingGuildRequests.delete(requestId);
         logger.error(`Failed to DM bot owner for guild approval: ${err}`);
-        throw new Error('Could not reach bot owner via DM. Ensure your DMs are open.');
+        throw new Error('Could not reach bot owner via DM. Ensure your DMs are open.', { cause: err });
     }
 }
 
@@ -207,12 +239,13 @@ export async function handleGuildApprovalButton(
     const customId = interaction.customId;
     const isApprove = customId.startsWith(GUILD_APPROVE_PREFIX);
     const isDeny = customId.startsWith(GUILD_DENY_PREFIX);
-    if (!isApprove && !isDeny) return;
+    if (!isApprove && !isDeny) {return;}
 
     const requestId = isApprove ? customId.slice(GUILD_APPROVE_PREFIX.length) : customId.slice(GUILD_DENY_PREFIX.length);
     const request = pendingGuildRequests.get(requestId);
 
-    if (!request) {
+    if (!request || isExpired(request.createdAt)) {
+        pendingGuildRequests.delete(requestId);
         await interaction.reply({ content: 'This request has already been handled or has expired.', flags: MessageFlags.Ephemeral });
         return;
     }

@@ -61,6 +61,39 @@ export class GuildConfig {
     ) {}
 }
 
+interface RawMessageJob {
+    type: 'message';
+    dayOfWeek: number;
+    hour: number;
+    minute: number;
+    channelId: string;
+    message: string;
+}
+
+interface RawAudioJob {
+    type: 'audio';
+    dayOfWeek: number;
+    hour: number;
+    minute: number;
+    clipFileName: string;
+    voiceChannelId?: string;
+}
+
+type RawJob = RawMessageJob | RawAudioJob;
+
+interface RawGuild {
+    botAdminRoleId?: string;
+    jobs?: Record<string, RawJob>;
+}
+
+interface RawAppConfig {
+    logLevel: string;
+    clientId: string;
+    ownerId: string;
+    auth: { discord: string };
+    guilds: Record<string, RawGuild>;
+}
+
 export class AppConfig {
     constructor(
         public readonly logLevel: string,
@@ -87,7 +120,7 @@ export class AppConfig {
 
     withRemovedJob(guildId: string, jobName: string): AppConfig {
         const existing = this.guilds.get(guildId);
-        if (!existing) throw new Error(`Guild ${guildId} not found in config`);
+        if (!existing) {throw new Error(`Guild ${guildId} not found in config`);}
         const newJobs = new Map(existing.jobs);
         newJobs.delete(jobName);
         const newGuilds = new Map(this.guilds);
@@ -97,7 +130,7 @@ export class AppConfig {
 
     withUpdatedBotAdminRole(guildId: string, roleId: string): AppConfig {
         const existing = this.guilds.get(guildId);
-        if (!existing) throw new Error(`Guild ${guildId} not found in config`);
+        if (!existing) {throw new Error(`Guild ${guildId} not found in config`);}
         const newGuilds = new Map(this.guilds);
         newGuilds.set(guildId, new GuildConfig(existing.jobs, roleId));
         return new AppConfig(this.logLevel, this.clientId, this.ownerId, newGuilds, this.auth);
@@ -143,14 +176,14 @@ export class AppConfig {
     }
 
     static fromSerialized(serialized: string): AppConfig {
-        const jsonObject = JSON.parse(serialized);
+        const jsonObject = JSON.parse(serialized) as RawAppConfig;
 
-        const auth: Auth = new Auth(jsonObject['auth']['discord']);
+        const auth: Auth = new Auth(jsonObject.auth.discord);
 
         const guilds = new Map<string, GuildConfig>();
-        for (const [guildId, rawGuild] of Object.entries<any>(jsonObject['guilds'])) {
+        for (const [guildId, rawGuild] of Object.entries(jsonObject.guilds)) {
             const jobs = new Map<string, BaseJob>();
-            for (const [jobName, rawJob] of Object.entries<any>(rawGuild.jobs ?? {})) {
+            for (const [jobName, rawJob] of Object.entries(rawGuild.jobs ?? {})) {
                 if (rawJob.type === 'message') {
                     jobs.set(jobName, new MessageJob(
                         rawJob.dayOfWeek,
@@ -168,7 +201,8 @@ export class AppConfig {
                         rawJob.voiceChannelId,
                     ));
                 } else {
-                    throw new Error(`Unknown job type "${rawJob.type}" for job "${jobName}" in guild "${guildId}"`);
+                    const unknownType = (rawJob as { type: unknown }).type;
+                    throw new Error(`Unknown job type "${unknownType}" for job "${jobName}" in guild "${guildId}"`);
                 }
             }
             guilds.set(guildId, new GuildConfig(jobs, rawGuild.botAdminRoleId));
